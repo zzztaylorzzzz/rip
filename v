@@ -2813,6 +2813,7 @@ local function wildfire()
 			if not target then
 				flamepunch()
 			else
+				print(target.Name.. " ".. target.Humanoid.Name)
 				local targHum = target:FindFirstChildWhichIsA("Humanoid")
 				if not targHum then return end
 				local pstand = targHum.PlatformStand
