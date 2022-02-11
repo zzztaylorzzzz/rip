@@ -2812,7 +2812,7 @@ local function wildfire()
 		else
 			if not target then
 				flamepunch()
-			else
+			elseif target then
 				print(target)
 				print(target.Name)
 				print(target:FindFirstChildWhichIsA("Humanoid"))
