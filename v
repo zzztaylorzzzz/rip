@@ -2380,7 +2380,7 @@ for _,v in pairs(workspace:GetDescendants()) do
 		assignID(v)
 	end
 end
-workspace.DescendantAdded:Connect(function(v) v.Parent.Archivable = true v.Archivable = true if v:IsA("Humanoid") then assignID(v) end end)
+workspace.DescendantAdded:Connect(function(v) pcall(function() v.Parent.Archivable = true v.Archivable = true if v:IsA("Humanoid") then assignID(v) end end) end)
 
 --- Abilities ---
 local function cloak()
