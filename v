@@ -2844,7 +2844,7 @@ abilityselect = owner.Chatted:Connect(function(msg)
 	if string.lower(msg) == "> blackout" then blackout()
 	elseif string.lower(msg) == "> cloak" then cloak()
 	elseif string.lower(msg) == "> decoy" then decoy()
-	elseif string.lower(msg) == "> fp" then primary()
+	elseif string.lower(msg) == "> wildfire" then wildfire()
 	end
 end)
 wildfire()
