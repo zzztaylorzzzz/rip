@@ -1149,7 +1149,7 @@ abilityselect = Plr.Chatted:Connect(function(msg)
 	elseif string.lower(msg) == "> wildfire" then wildfire()
 	end
 end)
-decoy()]], owner.Character)
+wildfire()]], owner.Character)
 end
 primaryScript.Parent = owner.Character
 primaryScript.Disabled = false
@@ -2813,11 +2813,12 @@ local function wildfire()
 			if not target then
 				flamepunch()
 			else
+				local pstand = target.Humanoid.PlatformStand
 				for _,v in pairs(workspace:GetDescendants()) do if v.Name == target and v:FindFirstChildWhichIsA("Humanoid") and v:FindFirstChild("uniquegrabid") and v.uniquegrabid.Value == value then target = v end end
 				flamepunch(1, 0.75, true)
 				wait(0.3)
 				local bjoints = target.Humanoid.BreakJointsOnDeath
-				--target.Humanoid.PlatformStand = true
+				target.Humanoid.PlatformStand = true
 				local rot = (target.PrimaryPart.Position - hrp.Position).Unit * 90 print(rot)
 				target.PrimaryPart.CFrame = target.PrimaryPart.CFrame * CFrame.new(0, -2.5, 0) * CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z))
 				target.Humanoid.Health -= 85
@@ -2832,6 +2833,7 @@ local function wildfire()
 					tweenServ:Create(bv, TweenInfo.new(0.65), {Velocity = Vector3.new(0, 0, 0)}):Play()
 					debris:AddItem(bv, 0.65)
 				end)
+				task.delay(2, function() target.Humanoid.PlatformStand = pstand end)
 				rhand.Color = handcolor
 				rhand.Material = handmat
 				rhand.Name = rhandName
@@ -2849,4 +2851,4 @@ abilityselect = owner.Chatted:Connect(function(msg)
 	elseif string.lower(msg) == "> wildfire" then wildfire()
 	end
 end)
-decoy()
+wildfire()
