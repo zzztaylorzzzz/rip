@@ -1,0 +1,263 @@
+if owner == nil then owner = game:GetService("Players"):GetPlayerFromCharacter(script.Parent) wait(5) print("Starting in 3 seconds") wait(3) end
+script.Parent = workspace
+
+initSize = 16
+
+local randomPos = nil
+local died = false
+
+local servs = {
+	phys = game:GetService("PhysicsService");
+	tween = game:GetService("TweenService");
+	debris = game:GetService("Debris")
+}
+
+-- Functions
+local function tween(thing, goal, info)
+	local tween = servs.tween:Create(thing, info, goal)
+	tween:Play()
+end
+
+local pocket = Instance.new("Model") pocket.Parent = script pocket.Name = "PD"
+
+local function createP(name, pos, size, color, mat)
+	local part = Instance.new("Part")
+	part.Parent = pocket
+	part.Name = name
+	part.Position = pos
+	part.Size = size
+	part.Color = color
+	part.Anchored = true
+	if mat ~= nil then part.Material = mat end
+	servs.phys:SetPartCollisionGroup(part, "Pocket")
+	return part
+end
+-- End of functions
+
+--for _,v in pairs(owner.Character:GetDescendants()) do
+--	if v:IsA("SpecialMesh") or v.Name == "Handle" or v:IsA("CharacterMesh") or v:IsA("ShirtGraphic") then
+--		v:Destroy()
+--	end
+--end
+
+owner.Character.Humanoid.BreakJointsOnDeath = false
+
+--owner.Character["Left Arm"].Color = Color3.fromRGB(43, 32, 27)
+--owner.Character["Right Arm"].Color = Color3.fromRGB(43, 32, 27)
+--local lArm = Instance.new("CharacterMesh")
+--lArm.Parent = owner.Character
+--lArm.BodyPart = Enum.BodyPart.LeftArm
+--lArm.MeshId = 279174949
+--local rArm = Instance.new("CharacterMesh")
+--rArm.Parent = owner.Character
+--rArm.BodyPart = Enum.BodyPart.RightArm
+--rArm.MeshId = 279174886
+--local lLeg = Instance.new("CharacterMesh")
+--lLeg.Parent = owner.Character
+--lLeg.BodyPart = Enum.BodyPart.LeftLeg
+--lLeg.MeshId = 319336109
+--local rLeg = Instance.new("CharacterMesh")
+--rLeg.Parent = owner.Character
+--rLeg.BodyPart = Enum.BodyPart.RightLeg
+--rLeg.MeshId = 319336155
+--local torso = Instance.new("CharacterMesh")
+--torso.Parent = owner.Character
+--torso.BodyPart = Enum.BodyPart.Torso
+--torso.MeshId = 376169183
+--local head = Instance.new("SpecialMesh")
+--head.Parent = owner.Character.Head
+--head.MeshId = "rbxassetid://17392637"
+--head.TextureId = "rbxassetid://4594774591"
+--local shirt = Instance.new("Shirt")
+--shirt.Parent = owner.Character
+--shirt.ShirtTemplate = "rbxassetid://3101877344"
+--local pants = Instance.new("Pants")
+--pants.Parent = owner.Character
+--pants.PantsTemplate = "rbxassetid://3214335322"
+
+local collisionG = "Pocket"
+for _, group in pairs(servs.phys:GetCollisionGroups()) do if group.name == "Pocket" then print("Found!") servs.phys:RemoveCollisionGroup("Pocket") end end
+servs.phys:CreateCollisionGroup("Pocket")
+servs.phys:CollisionGroupSetCollidable("Pocket", "Default", false)
+
+-- createP(script, "", Vector3.new(), Vector3.new(), Color3.fromRGB(63, 74, 60), Enum.Material.)
+
+local floor = createP("Floor", Vector3.new(5000, 500, 0), Vector3.new(150, 1, 150),  Color3.fromRGB(63, 74, 60), Enum.Material.Granite)
+local roof = createP("Roof", Vector3.new(5000, 550, 0), Vector3.new(150, 5, 150), Color3.fromRGB(63, 74, 60), Enum.Material.Granite)
+roof.CanCollide = false
+local left = createP("LeftWall", Vector3.new(5000, 525, -75), Vector3.new(150, 50, 1), Color3.fromRGB(63, 74, 60), Enum.Material.Granite)
+local right = createP("RightWall", Vector3.new(5000, 525, 75), Vector3.new(150, 50, 1), Color3.fromRGB(63, 74, 60), Enum.Material.Granite)
+local back = createP("Back", Vector3.new(5075, 525, 0), Vector3.new(1, 50, 150), Color3.fromRGB(63, 74, 60), Enum.Material.Granite)
+local front = createP("Front", Vector3.new(4925, 525, 0), Vector3.new(1, 50, 150), Color3.fromRGB(63, 74, 60), Enum.Material.Granite)
+local light = Instance.new("SurfaceLight")
+light.Parent = floor
+light.Face = Enum.NormalId.Top 
+light.Brightness = 0.5
+light.Range = 30
+
+local randomPos = roof.Position + Vector3.new(math.random(roof.Size.X*-1, roof.Size.X), -5, math.random(roof.Size.Z*-1, roof.Size.Z))/2
+
+local sunken = {}
+
+local function playsound(pos, soundType, hole)
+	if soundType == 0 then
+		hole.miscbrick.Position = pos
+		hole.miscbrick.sink:Play()
+	elseif soundType == 1 then
+		hole.screambrick.Position = pos
+		hole.screambrick.scream:Play()
+	end
+end
+
+local function checkSink(part, origin)
+	if part.Parent and part.Parent.Parent and not table.find(sunken, part) then
+		table.insert(sunken, #sunken + 1, part)
+		playsound(part.Position, 0, origin)
+		servs.phys:SetPartCollisionGroup(part, "Pocket")
+		part.Anchored = false
+		if part.Parent:FindFirstChild("Humanoid") then part.Parent.Humanoid.PlatformStand = true end
+		local attempts = 1
+		local slowSink;
+		slowSink = game:GetService("RunService").Heartbeat:Connect(function()
+			part.Velocity = Vector3.new((origin.Position.X - part.Position.X)/20, 1.5, (origin.Position.Z - part.Position.Z)/20)
+			attempts = attempts + 1
+			if (randomPos - part.Position).Magnitude < roof.Size.X then 
+				--print(part.Name)
+				attempts = -5
+				slowSink:Disconnect()
+				servs.phys:SetPartCollisionGroup(part, "Pocket")
+			end
+		end)
+		while part.Position.Y + part.Size.Magnitude*7.5 > origin.Position.Y and attempts > 0 do wait(1) end
+		wait(0.5)
+		if attempts > 0 then
+			slowSink:Disconnect()
+			part.CFrame = CFrame.new(randomPos)
+			if part.Parent:FindFirstChild("Humanoid") then part.Touched:Wait(0.15) part.Parent.Humanoid.PlatformStand = false wait() part.Velocity = Vector3.new(0, 0, 0) end
+		end
+		while part and part.Parent and part.Parent.Humanoid and part.Parent.Humanoid.Health > 0 do part.Parent.Humanoid.Health = part.Parent.Humanoid.Health - 0.15 wait() end
+	end
+end
+
+
+local hrpPos = owner.Character:WaitForChild("HumanoidRootPart").Position
+local sinkholes = {}
+
+local function createHole(position, size, setupdelay, temporary)
+	local sinkhole = Instance.new("Part")
+	sinkhole.Name = "da baby"
+	sinkhole.Size = Vector3.new(0, 0, 0)
+	sinkhole.Position = position
+	sinkhole.Parent = script
+	sinkhole.Anchored = true
+	sinkhole.Transparency = 1
+	local holeX, holeXneg, holeZ, holeZneg = Instance.new("Part"), Instance.new("Part"), Instance.new("Part"), Instance.new("Part")
+	holeX.Size, holeXneg.Size, holeZ.Size, holeZneg.Size = Vector3.new(1, 0.01, 1)*size, Vector3.new(1, 0.01, 1)*size, Vector3.new(1, 0.01, 1)*size, Vector3.new(1, 0.01, 1)*size
+	holeX.Position, holeXneg.Position, holeZ.Position, holeZneg.Position = sinkhole.Position + Vector3.new(size, 0, 0), sinkhole.Position + Vector3.new(size*-1, 0, 0), sinkhole.Position + Vector3.new(0, 0, size), sinkhole.Position + Vector3.new(0, 0, size*-1)
+	holeX.Parent, holeXneg.Parent, holeZ.Parent, holeZneg.Parent = sinkhole, sinkhole, sinkhole, sinkhole
+	holeX.Transparency, holeXneg.Transparency, holeZ.Transparency, holeZneg.Transparency = 1, 1, 1, 1
+	holeX.Anchored, holeXneg.Anchored, holeZ.Anchored, holeZneg.Anchored = true, true, true, true
+	holeX.Locked, holeXneg.Locked, holeZ.Locked, holeZneg.Locked = true, true, true, true
+	servs.phys:SetPartCollisionGroup(holeX, "Pocket") servs.phys:SetPartCollisionGroup(holeXneg, "Pocket") servs.phys:SetPartCollisionGroup(holeZ, "Pocket") servs.phys:SetPartCollisionGroup(holeZneg, "Pocket")
+	local mucusPart = Instance.new("Part")
+	mucusPart.Name = "mucus"
+	mucusPart.Size = Vector3.new(0, 0, 0)
+	mucusPart.Position = sinkhole.Position
+	mucusPart.Parent = sinkhole
+	mucusPart.Anchored = true
+	mucusPart.CanCollide = false
+	mucusPart.Transparency = 1
+	mucusPart.Locked = true
+	local mucus = Instance.new("Decal")
+	mucus.Parent = mucusPart
+	mucus.Face = Enum.NormalId.Top
+	mucus.Texture = "rbxassetid://129418678"
+	local screambrick = Instance.new("Part")
+	screambrick.Parent = sinkhole
+	screambrick.Name = "screambrick"
+	screambrick.Position = sinkhole.Position
+	screambrick.Size = Vector3.new(0.1, 0.1, 0.1)
+	screambrick.Transparency = 1
+	screambrick.CanCollide = false
+	screambrick.Anchored = true
+	local miscbrick = Instance.new("Part")
+	miscbrick.Parent = sinkhole
+	miscbrick.Name = "miscbrick"
+	miscbrick.Position = sinkhole.Position
+	miscbrick.Size = Vector3.new(0.1, 0.1, 0.1)
+	miscbrick.Transparency = 1
+	miscbrick.CanCollide = false
+	miscbrick.Anchored = true
+	local sink = Instance.new("Sound")
+	sink.Parent = miscbrick
+	sink.Name = "sink"
+	sink.SoundId = "rbxassetid://585364476"
+	sink.Volume = 10
+	local scream = Instance.new("Sound")
+	scream.Parent = screambrick
+	scream.Name = "scream"
+	scream.SoundId = "rbxassetid://1913988498"
+	scream.Volume = 5
+	tween(sinkhole, {Size = Vector3.new(size, 0.01, size)}, TweenInfo.new(setupdelay, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
+	tween(mucusPart, {Size = Vector3.new(size, 0.01, size)*2}, TweenInfo.new(setupdelay, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
+	table.insert(sinkholes, #sinkholes + 1, sinkhole)
+	sinkhole.Touched:Connect(function(part) checkSink(part, sinkhole) end)
+	if temporary ~= nil then
+		wait(setupdelay)
+		tween(sinkhole, {Size = Vector3.new(0, 0, 0)}, TweenInfo.new(temporary, Enum.EasingStyle.Exponential, Enum.EasingDirection.In))
+		tween(mucusPart,{Size = Vector3.new(0, 0, 0)}, TweenInfo.new(temporary, Enum.EasingStyle.Exponential, Enum.EasingDirection.In))
+		servs.debris:AddItem(sinkhole, temporary)
+	end
+	return sinkhole 
+end
+
+------
+local inithole = createHole(Vector3.new(hrpPos.X, 0, hrpPos.Z), initSize, 4)
+local intro = Instance.new("Sound")
+intro.Parent = inithole
+intro.SoundId = "rbxassetid://1106495590"
+intro.Volume = 5
+intro:Play()
+
+local touchCD = false
+local torsotouch = owner.Character.HumanoidRootPart.Touched:Connect(function(part)
+	if part.Parent and part.Parent.Parent and part.Parent:FindFirstChild("Humanoid") and not table.find(sunken, part.Parent) and not touchCD then
+		touchCD = true
+		table.insert(sunken, #sunken + 1, part)
+		local newhole = createHole(Vector3.new(part.Position.X, 0, part.Position.Z), math.random(7, 12), 1, math.random(15, 30))
+		wait(4)
+		touchCD = false
+	end
+end)
+torsotouch:Disconnect()
+
+--owner.Character.Humanoid.Died:Connect(function()
+--	died = true
+--	local fakechar = Instance.new("Model")
+--	fakechar.Parent = script
+--	fakechar.Name = owner.Name
+--	for _,v in pairs(owner.Character:GetChildren()) do v.Parent = fakechar end
+--	fakechar.Torso.Anchored = true
+--	tween(fakechar.Torso, {Position = fakechar.Torso.Position - Vector3.new(0, fakechar.Torso.Position.Y + 10, 0)}, TweenInfo.new(8, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
+--	for _, sinkhole in pairs(sinkholes) do
+--		tween(sinkhole, {Size = Vector3.new(0, 0, 0)}, TweenInfo.new(8, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
+--		tween(sinkhole.mucus, {Size = Vector3.new(0, 0, 0)}, TweenInfo.new(8, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
+--	end
+--	wait(8)
+--	script:Destroy()
+--end)
+
+--owner.CharacterAdded:Connect(function()
+--	if died then return end
+--	for _, sinkhole in pairs(sinkholes) do
+--		tween(sinkhole, {Size = Vector3.new(0, 0, 0)}, TweenInfo.new(4, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
+--		tween(sinkhole.mucus, {Size = Vector3.new(0, 0, 0)}, TweenInfo.new(4, Enum.EasingStyle.Linear, Enum.EasingDirection.Out))
+--	end
+--	wait(4)
+--	script:Destroy()
+--end)
+
+while wait(3) do
+	randomPos = roof.Position + Vector3.new(math.random(roof.Size.X*-1, roof.Size.X), -5, math.random(roof.Size.Z*-1, roof.Size.Z))/2
+	--warn(randomPos)
+end
