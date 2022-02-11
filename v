@@ -2813,6 +2813,7 @@ local function wildfire()
 			if not target then
 				flamepunch()
 			else
+				print(target)
 				print(target.Name)
 				print(target:FindFirstChildWhichIsA("Humanoid"))
 				local targHum = target:FindFirstChildWhichIsA("Humanoid")
