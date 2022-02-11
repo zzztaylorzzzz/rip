@@ -2813,15 +2813,17 @@ local function wildfire()
 			if not target then
 				flamepunch()
 			else
-				local pstand = target.Humanoid.PlatformStand
+				local targHum = target:FindFirstChildWhichIsA("Humanoid")
+				if not targHum then return end
+				local pstand = targHum.PlatformStand
 				for _,v in pairs(workspace:GetDescendants()) do if v.Name == target and v:FindFirstChildWhichIsA("Humanoid") and v:FindFirstChild("uniquegrabid") and v.uniquegrabid.Value == value then target = v end end
 				flamepunch(1, 0.75, true)
 				wait(0.3)
-				local bjoints = target.Humanoid.BreakJointsOnDeath
-				target.Humanoid.PlatformStand = true
+				local bjoints = targHum.BreakJointsOnDeath
+				targHum.PlatformStand = true
 				local rot = (target.PrimaryPart.Position - hrp.Position).Unit * 90 print(rot)
 				target.PrimaryPart.CFrame = target.PrimaryPart.CFrame * CFrame.new(0, -2.5, 0) * CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z))
-				target.Humanoid.Health -= 85
+				targHum.Health -= 85
 				local bv = Instance.new("BodyVelocity", target.PrimaryPart)
 				--local bg = Instance.new("BodyGyro", target.PrimaryPart)
 				--bg.P = 30000
@@ -2833,7 +2835,7 @@ local function wildfire()
 					tweenServ:Create(bv, TweenInfo.new(0.65), {Velocity = Vector3.new(0, 0, 0)}):Play()
 					debris:AddItem(bv, 0.65)
 				end)
-				task.delay(2, function() target.Humanoid.PlatformStand = pstand end)
+				task.delay(2, function() targHum.PlatformStand = pstand end)
 				rhand.Color = handcolor
 				rhand.Material = handmat
 				rhand.Name = rhandName
