@@ -227,8 +227,8 @@ running = game:GetService("RunService").RenderStepped:Connect(function()
 			end
 		end
 		Hum.CameraOffset = (Core.CFrame:ToWorldSpace(CFrame.new(0, 1, 0.7))):pointToObjectSpace(Head.CFrame.p)
-		if Hum.PlatformStand == true and not fallen then
-			print("pstand")
+		if (Hum.PlatformStand == true or Hum.Sit == true) and not fallen then
+			--print("pstand")
 			if crouching then crouching = false remote:FireServer("uncrouch") end
 			if Cam.CameraType ~= Enum.CameraType.Scriptable then
 				for _,v in pairs(Plr.Character:GetDescendants()) do if v == Plr.Character.Head or v.Parent:IsA("Accessory") and v:IsA("BasePart") then v.Transparency = 1 end end
@@ -702,11 +702,11 @@ Hum.HealthChanged:Connect(updateGui)
 local function crouch()
 	if not crouching then
 		crouching = true
-		print("Crouch - Client")
+		--print("Crouch - Client")
 		remote:FireServer("crouch")
 	else
 		crouching = false
-		print("unrouch - Client")
+		--print("unrouch - Client")
 		remote:FireServer("uncrouch")
 	end
 end
@@ -714,7 +714,7 @@ end
 Hum.StateChanged:Connect(function(old, new)
 	if new == Enum.HumanoidStateType.Landed and old == Enum.HumanoidStateType.Freefall then
 		local value = 55 - (math.pow(math.abs(Core.Velocity.Y) - 55, 1.25))
-		print("falling -".. Core.Velocity.Y.. "- (".. value.." damage)")
+		--print("falling -".. Core.Velocity.Y.. "- (".. value.." damage)")
 		if value < 0 then
 			remote:FireServer("fall", nil, 55 - (math.pow(math.abs(Core.Velocity.Y) - 55, 1.25)))
 			if value < -35 then
@@ -737,7 +737,7 @@ sprintCor = coroutine.wrap(function()
 		if Hum:GetState() == Enum.HumanoidStateType.Jumping and not sprintDisabled then
 			stamina -= 15
 			if stamina <= 0 then 
-				print("Exhausted")
+				--print("Exhausted")
 				sprinting = false
 				sprintDisabled = true
 				Hum.JumpPower = 0
@@ -759,7 +759,7 @@ sprintCor = coroutine.wrap(function()
 			if Hum.MoveDirection.Magnitude > 0 and stamina > 0 then
 				stamina -= 0.3
 			elseif stamina <= 0 then
-				print("Exhausted")
+				--("Exhausted")
 				sprinting = false
 				sprintDisabled = true
 				Hum.JumpPower = 0
@@ -793,7 +793,7 @@ local function grab()
 	local ray = workspace:Raycast(Core.Position, Core.CFrame.LookVector*7.5)
 	if not ray then return end
 	local part = ray.Instance
-	if not part or not part.Parent or not (part.Parent:FindFirstChild("Humanoid") and (not part.Parent.Parent or not part.Parent.Parent:FindFirstChild("Humanoid"))) then return part end
+	if not part or part:IsDescendantOf(Body) or not part.Parent or not (part.Parent:FindFirstChild("Humanoid") and (not part.Parent.Parent or not part.Parent.Parent:FindFirstChild("Humanoid"))) then return part end
 	if (part.Parent:FindFirstChild("Humanoid") and not part.Parent:FindFirstChild("uniquegrabid")) or (part.Parent.Parent:FindFirstChild("Humanoid") and not part.Parent.Parent:FindFirstChild("uniquegrabid")) then print("no id") return end
 	sprinting = false
 	victim = part.Parent
@@ -858,7 +858,7 @@ input.InputBegan:Connect(function(obj, gameProcessed)
 			sprinting = false
 			Hum.WalkSpeed = bitingSpeed
 			Hum.JumpPower = 0
-			print("biting")
+			--print("biting")
 			biting = true
 			bite()
 		end
@@ -875,7 +875,7 @@ input.InputBegan:Connect(function(obj, gameProcessed)
 			runServ.Heartbeat:Wait()
 		end
 		if progress >= 1 then
-			print("Transformed")
+			--print("Transformed")
 			remote:FireServer("transform")
 			pbar:Destroy()
 			if not vampire then
@@ -894,7 +894,7 @@ input.InputBegan:Connect(function(obj, gameProcessed)
 				end
 			end
 		else
-			print("Cancelled")
+			--print("Cancelled")
 			pbar:Destroy()
 		end
 	end
@@ -904,7 +904,7 @@ input.InputEnded:Connect(function(obj, gameProcessed)
 	if obj.KeyCode == Enum.KeyCode.LeftShift and sprinting then
 		sprinting = false
 	elseif not gameProcessed and obj.KeyCode == Enum.KeyCode.R then
-		print("yomam")
+		--print("yomam")
 		endPrimary()
 	elseif obj.UserInputType == Enum.UserInputType.MouseButton2 then
 		endSecondary()
@@ -922,11 +922,11 @@ input.InputEnded:Connect(function(obj, gameProcessed)
 end)
 
 playerRemote.OnClientEvent:Connect(function(action)
-	warn("event")
+	--warn("event")
 	if action == "escaped" and victim then
 		--warn("escaped!")
 		--remote:FireServer("stopdraining")
-		print("release")
+		--print("release")
 		remote:FireServer("release", victim.Name)
 		playerRemote.OnClientEvent:Wait()
 		biting = false
@@ -949,9 +949,16 @@ playerRemote.OnClientEvent:Connect(function(action)
 end)
 
 --- Abilities ---
+print("Transform - V")
+print("Crouch - C")
+print("Sprint - Shift")
+print("(while transformed) Grab - Left Click || Drain - Hold Left Click")
+print("untransform while grabbing a player to let go")
 
 -- Cloak --
 local function cloak()
+	print("Abduct - R")
+	print("Cloak - Right Click")
 	local path;
 	local pos;
 	local abductPos = Core.Position
@@ -1003,12 +1010,13 @@ local function cloak()
 	end
 end
 local function blackout()
+	print("Power surge - R")
 	local chargeSFX = Instance.new("Sound", Head)
 	chargeSFX.SoundId = "rbxassetid://8606994267"
 	function primary()
 		local blackoutcce = Instance.new("ColorCorrectionEffect", lighting)
 		tweenServ:Create(blackoutcce, TweenInfo.new(0.75, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), {Contrast = 0.5}):Play()
-		print("primary - Client")
+		--print("primary - Client")
 		ability = true
 		remote:FireServer("primary")
 		chargeSFX:Play()
@@ -1034,6 +1042,7 @@ local function blackout()
 	end
 end
 local function decoy()
+	print("Disguise - Right Click")
 	function primary()
 	end
 	function endPrimary()
@@ -1100,6 +1109,7 @@ local function decoy()
 	end
 end
 local function wildfire()
+	print("Flame Punch - R")
 	function primary()
 		if usingP then return end
 		grabCD = true
@@ -1333,8 +1343,8 @@ local function ragjoints()
 end
 ragjoints()
 
-local function ragdoll(chara, offset, anchorTime)
-	local playerremoving;
+local function ragdoll(chara, offset, anchorTime, velocity, velocityPart)
+	local playerremoving, chararemoving;
 	local newchar = Instance.new("Model")
 	chara.PrimaryPart.Anchored = true
 	if not anchorTime then anchorTime = 0 end
@@ -1342,6 +1352,7 @@ local function ragdoll(chara, offset, anchorTime)
 	if chara:FindFirstChild("Humanoid") then chara.Humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
 	if chara:FindFirstChild("UpperTorso") then
 		for _,v in pairs(chara:GetDescendants()) do
+			if v:IsA("BasePart") then v.Massless = true end
 			if v:IsA("Motor6D") then
 				if v.Name ~= "Root" and v.Name ~= "RootJoint" then
 					local att0 = Instance.new("Attachment")
@@ -1365,6 +1376,7 @@ local function ragdoll(chara, offset, anchorTime)
 		end
 	elseif chara:FindFirstChild("Torso") then
 		for index,joint in pairs(chara:GetDescendants()) do
+			if joint:IsA("BasePart") then joint.Massless = true end
 			if joint:IsA("Motor6D") then
 				local socket = Instance.new("BallSocketConstraint")
 				local a1 = Instance.new("Attachment")
@@ -1387,7 +1399,12 @@ local function ragdoll(chara, offset, anchorTime)
 		chararootpart.CanCollide = false
 		chararootpart.Massless = true
 	end
-	if players:GetPlayerFromCharacter(chara) then
+	local tempclone = chara:Clone()
+	if chara:FindFirstChild("playerID") and not players:GetPlayerFromCharacter(chara) then
+		chararemoving = chara.AncestryChanged:Connect(function()
+			if not chara:IsDescendantOf(game) then tempclone.Parent = workspace tempclone.PrimaryPart.Anchored = false chararemoving:Disconnect() end
+		end)
+	elseif players:GetPlayerFromCharacter(chara) then
 		local pid = Instance.new("IntValue", newchar)
 		pid.Name = "playerID"
 		pid.Value = players:GetPlayerFromCharacter(chara).UserId
@@ -1400,6 +1417,11 @@ local function ragdoll(chara, offset, anchorTime)
 	end
 	task.delay(anchorTime, function()
 		chara.PrimaryPart.Anchored = false
+		if velocity and velocityPart then
+			print(velocity)
+			wait(0.1)
+			velocityPart.AssemblyLinearVelocity = velocity
+		end
 	end)
 end
 
@@ -2223,7 +2245,9 @@ remote.OnServerEvent:Connect(function(player, action, target, value)
 			pA, pS, pD = pW:Clone(), pW:Clone(), pW:Clone()
 			pA.KeyboardKeyCode, pS.KeyboardKeyCode, pD.KeyboardKeyCode = Enum.KeyCode.A, Enum.KeyCode.S, Enum.KeyCode.D
 			pA.Parent, pS.Parent, pD.Parent = pW.Parent, pW.Parent, pW.Parent
-			pW.UIOffset, pA.UIOffset, pS.UIOffset, pD.UIOffset = Vector2.new(0, 75), Vector2.new(-250, 0), Vector2.new(0, -75), Vector2.new(250, 0)
+			if not ui or not ui.Parent then
+				pW.UIOffset, pA.UIOffset, pS.UIOffset, pD.UIOffset = Vector2.new(0, 75), Vector2.new(-250, 0), Vector2.new(0, -75), Vector2.new(250, 0)
+			end
 			escKeyPress(pW) escKeyPress(pA) escKeyPress(pS) escKeyPress(pD)
 		end
 	elseif action == "release" then
@@ -2666,8 +2690,11 @@ local function decoy()
 			alert.Enabled = true
 			decoytform.Pitch = (100 + math.random(0, 15))/100
 			decoytform:Play()
-			local disguiseFace = target.Head:FindFirstChildWhichIsA("Decal").Texture
-			target.Head:FindFirstChildWhichIsA("Decal").Texture = "rbxassetid://1111587497"
+			local disguiseFace = false
+			if target.Head:FindFirstChild("face") then
+				disguiseFace = target.Head:FindFirstChildWhichIsA("Decal").Texture
+				target.Head.face.Texture = "rbxassetid://1111587497"
+			end
 			transformAnim(target)
 			for _,v in pairs(target:GetDescendants()) do
 				if v:IsA("BasePart") and not v.Parent:IsA("Accessory") then
@@ -2681,10 +2708,12 @@ local function decoy()
 					end
 				end
 			end
-			wait(15)
+			wait(45)
 			alert.Enabled = false
 			decoytform:Play()
-			target.Head:FindFirstChildWhichIsA("Decal").Texture = disguiseFace
+			if disguiseFace then
+				target.Head.face.Texture = disguiseFace
+			end
 			transformAnim(target)
 			for i,v in pairs(decoyParts) do
 				v.Color = decoyColors[i]
@@ -2697,6 +2726,8 @@ local function decoy()
 			char.Humanoid:ApplyDescription(desc2); target.Humanoid:ApplyDescription(desc1)
 
 			animate = char:FindFirstChild("Animate")
+			face = char.Head:FindFirstChild("face")
+			origFace = char.Head:FindFirstChild("face").Texture
 			hum = char:FindFirstChild("Humanoid")
 			head = char.Head
 			rarm = char:FindFirstChild("RightUpperArm")
@@ -2711,7 +2742,8 @@ local function decoy()
 			llleg, rlleg = char:FindFirstChild("LeftLowerLeg"), char:FindFirstChild("RightLowerLeg")
 			lfoot, rfoot = char:FindFirstChild("LeftFoot"), char:FindFirstChild("RightFoot")
 			hrp = char.HumanoidRootPart
-			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
+			hum.DisplayName = players:GetNameFromUserIdAsync(target:FindFirstChild("playerID").Value)
 
 			rarmmotor = rarm.RightShoulder
 			larmmotor = larm.LeftShoulder
@@ -2778,9 +2810,15 @@ end
 
 local function wildfire()
 	local firebrick, fire, firelight, firefollow;
+	local startSound, loopSound, punchSound, hitSound;
 	local handcolor, handmat;
 	function primary(player, action, target, value)
+		if target then for _,v in pairs(workspace:GetDescendants()) do if v.Name == target and v:FindFirstChildWhichIsA("Humanoid") and v:FindFirstChild("uniquegrabid") and v.uniquegrabid.Value == value then target = v end end end
 		if not usingPrimary then
+			startSound, loopSound, punchSound, hitSound = Instance.new("Sound"), Instance.new("Sound"), Instance.new("Sound"), Instance.new("Sound")
+			startSound.SoundId, loopSound.SoundId, punchSound.SoundId, hitSound.SoundId = "rbxassetid://8796378067", "rbxassetid://8796376605", "rbxassetid://8796376990", "rbxassetid://8796375345"
+			hitSound.Volume, loopSound.Looped = 1, true
+			startSound.Parent, loopSound.Parent, punchSound.Parent, hitSound.Parent = rhand, rhand, rhand, rhand
 			handcolor, handmat = rhand.Color, rhand.Material
 			usingPrimary = true
 			firebrick = Instance.new("Part")
@@ -2806,40 +2844,51 @@ local function wildfire()
 			end)
 			firefollow()
 			flamepunchStart()
+			startSound:Play() loopSound:Play()
 			rhand.Name = "flamepunch"
 			rhand.Color = Color3.fromRGB(255, 180, 80)
 			rhand.Material = Enum.Material.Neon
 		else
 			if not target then
+				punchSound:Play()
 				flamepunch()
 			elseif target then
-				print("i hate u")
+				hitSound:Play()
+				tweenServ:Create(loopSound, TweenInfo.new(6), {Volume = 0}):Play()
+				target.Archivable = true
 				print(target)
 				print(target.Name)
 				print(target:FindFirstChildWhichIsA("Humanoid"))
-				local targHum = target:FindFirstChildWhichIsA("Humanoid")
+				local targHum = target:FindFirstChildOfClass("Humanoid")
 				if not targHum then return end
 				local pstand = targHum.PlatformStand
 				for _,v in pairs(workspace:GetDescendants()) do if v.Name == target and v:FindFirstChildWhichIsA("Humanoid") and v:FindFirstChild("uniquegrabid") and v.uniquegrabid.Value == value then target = v end end
 				flamepunch(1, 0.75, true)
 				wait(0.3)
-				local bjoints = targHum.BreakJointsOnDeath
 				targHum.PlatformStand = true
 				local rot = (target.PrimaryPart.Position - hrp.Position).Unit * 90 print(rot)
-				target.PrimaryPart.CFrame = target.PrimaryPart.CFrame * CFrame.new(0, -2.5, 0) * CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z))
+
+				if targHum.Health - 85 <= 0 then targHum.BreakJointsOnDeath = false end
 				targHum.Health -= 85
-				local bv = Instance.new("BodyVelocity", target.PrimaryPart)
-				--local bg = Instance.new("BodyGyro", target.PrimaryPart)
-				--bg.P = 30000
-				--bg.CFrame = CFrame.Angles(math.rad(-1*rot.Y), math.rad(rot.Z), math.rad(-1*rot.X))
-				bv.MaxForce = Vector3.new(math.huge, 0, math.huge)
-				--tweenServ:Create(bg, TweenInfo.new(0.25), {CFrame = CFrame.Angles(math.rad(rot.))}):Play()
-				bv.Velocity = (((target.PrimaryPart.Position - hrp.Position).Unit * 40) * Vector3.new(1, 0, 1)) + Vector3.new(0, 0.5, 0)
-				task.delay(0.45, function()
-					tweenServ:Create(bv, TweenInfo.new(0.65), {Velocity = Vector3.new(0, 0, 0)}):Play()
-					debris:AddItem(bv, 0.65)
-				end)
-				task.delay(2, function() targHum.PlatformStand = pstand end)
+				if targHum.Health <= 0 then
+					wait()
+					ragdoll(target, CFrame.new(0, 0, 0), 0, (((target.PrimaryPart.Position - hrp.Position).Unit * 150) * Vector3.new(1, 0, 1)) + Vector3.new(0, 150, 0), target.PrimaryPart)
+				else
+					target.PrimaryPart.CFrame = target.PrimaryPart.CFrame * CFrame.new(0, -2.5, 0) * CFrame.Angles(math.rad(rot.X), math.rad(rot.Y), math.rad(rot.Z))
+					local bv = Instance.new("BodyVelocity", target.PrimaryPart)
+					--local bg = Instance.new("BodyGyro", target.PrimaryPart)
+					--bg.P = 30000
+					--bg.CFrame = CFrame.Angles(math.rad(-1*rot.Y), math.rad(rot.Z), math.rad(-1*rot.X))
+					bv.MaxForce = Vector3.new(math.huge, 0, math.huge)
+					--tweenServ:Create(bg, TweenInfo.new(0.25), {CFrame = CFrame.Angles(math.rad(rot.))}):Play()
+					bv.Velocity = (((target.PrimaryPart.Position - hrp.Position).Unit * 40) * Vector3.new(1, 0, 1)) + Vector3.new(0, 0.5, 0)
+					task.delay(0.45, function()
+						tweenServ:Create(bv, TweenInfo.new(0.65), {Velocity = Vector3.new(0, 0, 0)}):Play()
+						debris:AddItem(bv, 0.65)
+					end)
+					task.delay(2, function() targHum.PlatformStand = pstand end)
+				end
+
 				rhand.Color = handcolor
 				rhand.Material = handmat
 				rhand.Name = rhandName
