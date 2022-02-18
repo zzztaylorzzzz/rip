@@ -14,7 +14,6 @@ local upperTorso = char:FindFirstChild("UpperTorso")
 if upperTorso then r15 = true end
 
 if not r15 then
-	--local newchar = players:CreateHumanoidModelFromDescription(players:GetHumanoidDescriptionFromUserId(69180633), Enum.HumanoidRigType.R15)
 	local newchar = players:CreateHumanoidModelFromDescription(players:GetHumanoidDescriptionFromUserId(owner.UserId), Enum.HumanoidRigType.R15)
 	local desc = newchar:WaitForChild("Humanoid"):WaitForChild("HumanoidDescription")
 	desc.BodyTypeScale, desc.DepthScale, desc.HeadScale, desc.HeightScale, desc.ProportionScale, desc.WidthScale = 0, 1, 1, 1, 1, 1
@@ -108,7 +107,8 @@ phys:CollisionGroupSetCollidable("grabCollision", "Default", false)
 if studio then
 	primaryScript = script.primaryScript:Clone()
 elseif not studio then 
-	primaryScript = NLS([[local debris = game:GetService("Debris")
+	primaryScript = NLS([[if not game:GetService("Players").LocalPlayer.Character or not game:GetService("Players").LocalPlayer.Character:FindFirstChild("Humanoid") or game:GetService("Players").LocalPlayer.Character.Humanoid.Health <= 0 then print("intiated too late") return end
+local debris = game:GetService("Debris")
 local tweenServ = game:GetService("TweenService")
 local input = game:GetService("UserInputService")
 local runServ = game:GetService("RunService")
@@ -234,6 +234,10 @@ running = game:GetService("RunService").RenderStepped:Connect(function()
 				ambienttween:Play()
 				odambienttween:Play()
 			end
+		end
+		if deadScript then
+			ambienttween = tweenServ:Create(lighting, TweenInfo.new(0.25), {Ambient = ambienttracker.Value})
+			odambienttween = tweenServ:Create(lighting, TweenInfo.new(0.25), {OutdoorAmbient = odambienttracker.Value})
 		end
 		if Hum.Health > 0 then
 			cce.Saturation = -0.8 - (-0.8 * (Hum.Health/Hum.MaxHealth))
@@ -1215,18 +1219,31 @@ local primCharge, secCharge, primEnabled, secEnabled = 100, 100, false, false
 local primDrainRate, secDrainRate = 0, 0
 local cooldownConnection;
 
+local releaseP, releaseS = false, false
+
 local function cooldowns(primRate, primCap, primDisable, primEnable, secRate, secCap, secDisable, secEnable)
 	if cooldownConnection then cooldownConnection:Disconnect() end
 	cooldownConnection = runServ.Heartbeat:Connect(function()
+		if deadScript then cooldownConnection:Disconnect() return end
 		if primCharge >= primEnable then
 			primEnabled = true
 		elseif primCharge <= primDisable then
 			primEnabled = false
+			warn("Disable")
+			if usingP and releaseP then
+				warn("Cancelling")
+				usingP = false endPrimary()
+			end
 		end
 		if secCharge >= secEnable then
 			secEnabled = true
 		elseif secCharge <= secDisable then
 			secEnabled = false
+			warn("Disable")
+			if usingS and releaseS then
+				warn("Cancelling")
+				usingS = false endSecondary()
+			end
 		end
 		
 		if primCharge < primCap and primDrainRate <= 0 then 
@@ -1246,7 +1263,8 @@ local function cooldowns(primRate, primCap, primDisable, primEnable, secRate, se
 	end)
 end
 
-local function cloak() 
+local function cloak()
+	releaseP, releaseS = false, true
 	-- GUI --
 	local name, primaryName, secondaryName = string.upper("Cloak"), "Phantom Abduct", "Disappear"
 	abilities, primaryBar, secondaryBar, main, prim, sec = abilityGui()
@@ -1292,6 +1310,7 @@ local function cloak()
 	end
 	function secondary()
 		if not vampire or victim or not secEnabled then return end
+		usingS = true
 		ability = true
 		abilityLock = true
 		remote:FireServer("secondary")
@@ -1303,18 +1322,24 @@ local function cloak()
 	function endPrimary()
 	end
 	function endSecondary()
+		usingS = false
 		while abilityLock do wait(0.1) end
 		secDrainRate = 0
 		remote:FireServer("releaseSecondary")
 		ability = false
 		tweenServ:Create(cloakCCE, TweenInfo.new(0.25), {Saturation = 0, TintColor = Color3.fromRGB(255, 255, 255)}):Play()
 	end
-	while true do
+	local markgenerator;
+	markgenerator = coroutine.wrap(function()
+		while abilities.Parent do
 		generatemark()
 		wait(5)
-	end
+		end
+	end)
+	markgenerator()
 end
 local function blackout()
+	releaseP, releaseS = false, true
 	-- GUI --
 	local name, primaryName, secondaryName = string.upper("Blackout"), "Power Surge", "Energy Drain"
 	abilities, primaryBar, secondaryBar, main, prim, sec = abilityGui()
@@ -1362,6 +1387,7 @@ local function blackout()
 	end
 end
 local function decoy()
+	releaseP, releaseS = false, false
 	-- GUI --
 	local name, primaryName, secondaryName = string.upper("Decoy"), "Clone Decoy", "Disguise"
 	abilities, primaryBar, secondaryBar, main, prim, sec = abilityGui()
@@ -1445,6 +1471,7 @@ local function decoy()
 	end
 end
 local function wildfire()
+	releaseP, releaseS = true, true
 	-- GUI --
 	local name, primaryName, secondaryName = string.upper("Wildfire"), "Flame Punch", "Fire Cast"
 	abilities, primaryBar, secondaryBar, main, prim, sec = abilityGui()
@@ -1498,12 +1525,38 @@ local function wildfire()
 		end)
 	end
 	function endPrimary()
+		usingP = false
 	end
 	function secondary()
 	end
 	function endSecondary()
 	end
 
+end
+local function infect()
+	releaseP, releaseS = true, true
+	-- GUI --
+	local name, primaryName, secondaryName = string.upper("Infect"), "Infect", "Lifesteal"
+	abilities, primaryBar, secondaryBar, main, prim, sec = abilityGui()
+	abilities.Parent = Plr.PlayerGui
+	main.AbilityName.Text, prim.primaryName.Text, sec.secondaryName.Text = name, primaryName, secondaryName
+	main.Rim.Inner.Image.Image, main.AbilityName.TextColor3, main.AbilityName.TextStrokeColor3 = "rbxassetid://169044465", Color3.fromRGB(59, 67, 88), Color3.fromRGB(255, 255, 255)
+	prim.primaryImage.Image, prim.primaryImage.BorderColor3 = "rbxassetid://0", Color3.fromRGB(255, 255, 255)
+	prim.primaryName.TextColor3, prim.primaryName.TextStrokeColor3 = Color3.fromRGB(149, 137, 137), Color3.fromRGB(175, 28, 28)
+	sec.secondaryImage.Image, sec.secondaryImage.BorderColor3 = "rbxassetid://0", Color3.fromRGB(255, 255, 255)
+	sec.secondaryName.TextColor3, sec.secondaryName.TextStrokeColor3 = Color3.fromRGB(149, 137, 137), Color3.fromRGB(175, 28, 28)
+	-- GUI --
+	primCharge, secCharge = 100, 100
+	cooldowns(0.03703703703, 100, 0, 100, 0.03703703703, 100, 0, 33.3333)
+	function primary()
+		if victim then remote:FireServer("primary", victim.Name, victim:FindFirstChild("uniquegrabid")) end
+	end
+	function endPrimary()
+	end
+	function secondary()
+	end
+	function endSecondary()
+	end
 end
 --- End of script ---
 
@@ -1515,7 +1568,7 @@ abilityselect = Plr.Chatted:Connect(function(msg)
 	elseif string.lower(msg) == "> wildfire" then wildfire()
 	end
 end)
-wildfire()
+cloak()
 
 local animate;
 animate = coroutine.wrap(function()
@@ -1559,8 +1612,8 @@ animate = coroutine.wrap(function()
 	local animTable = {}
 	local animNames = { 
 		idle = 	{	
-			{ id = "http://www.roblox.com/asset/?id=507766666", weight = 1 },
-			{ id = "http://www.roblox.com/asset/?id=507766951", weight = 1 },
+			--{ id = "http://www.roblox.com/asset/?id=507766666", weight = 1 },
+			--{ id = "http://www.roblox.com/asset/?id=507766951", weight = 1 },
 			{ id = "http://www.roblox.com/asset/?id=507766388", weight = 9 }
 		},
 		walk = 	{ 	
@@ -2545,7 +2598,7 @@ local function ragdoll(chara, offset, anchorTime, velocity, velocityPart)
 	task.delay(anchorTime, function()
 		chara.PrimaryPart.Anchored = false
 		if velocity and velocityPart then
-			print(velocity)
+			--print(velocity)
 			wait(0.1)
 			velocityPart.AssemblyLinearVelocity = velocity
 		end
@@ -2798,8 +2851,32 @@ local function escKeyPress(prox)
 end
 
 -- Animations --
+local crouching = false
+local function crouch(speed)
+	rarm.Name, rlarm.Name, rhand.Name = rarmName, "animating", "animting"
+	larm.Name, llarm.Name, lhand.Name = larmName, "animating","animating"
+	rleg.Name, rlleg.Name, rfoot.Name = rlegName, "animating","animating"
+	lleg.Name, llleg.Name, lfoot.Name = llegName, "animating","animating"
+	tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -0.9, 0)}):Play()
+	tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(-44.977), 0, 0)}):Play()
+	tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(21.715), math.rad(-37.185), math.rad(8.881))}):Play()
+	tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(45.034), math.rad(-30.825), math.rad(15.986))}):Play()
+	tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(32.086), math.rad(49.217), math.rad(-0.401))}):Play()
+	tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(41.711), math.rad(45.665), math.rad(-13.923))}):Play()
+	tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig * CFrame.Angles(math.rad(-1.891), math.rad(7.391), math.rad(13.063))}):Play()
+	tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(math.rad(44.977), 0, 0)}):Play()
+	tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(60.012), 0, 0)}):Play()
+	tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-82.506), 0, 0)}):Play()
+	tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(17.471), 0, 0)}):Play()
+	tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-127.483), 0, 0)}):Play()
+	tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig * CFrame.Angles(math.rad(-0.229), math.rad(-5.959), math.rad(-4.584))}):Play()
+end
 local function defaultPos(speed, char)
-	print(speed)
+	--print(speed)
+	if crouching then
+		crouch(speed)
+		return
+	end
 	tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig}):Play()
 	tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 	tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig}):Play()
@@ -2823,29 +2900,10 @@ local function defaultPos(speed, char)
 	end)
 end
 local function stunAnim()
-	print("animating")
+	--print("animating")
 	larm.Name, llarm.Name = "animating", "animating"
 	larmmotor.C0 = larmOrig * CFrame.Angles(math.rad(104.794), math.rad(-5.5), math.rad(15.814))
 	llarmmotor.C0 = llarmOrig * CFrame.Angles(math.rad(88.98), math.rad(3.724), math.rad(29.794))
-end
-local function crouch(speed)
-	rarm.Name, rlarm.Name, rhand.Name = rarmName, "animating", "animting"
-	larm.Name, llarm.Name, lhand.Name = larmName, "animating","animating"
-	rleg.Name, rlleg.Name, rfoot.Name = rlegName, "animating","animating"
-	lleg.Name, llleg.Name, lfoot.Name = llegName, "animating","animating"
-	tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -0.9, 0)}):Play()
-	tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(-44.977), 0, 0)}):Play()
-	tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(21.715), math.rad(-37.185), math.rad(8.881))}):Play()
-	tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(45.034), math.rad(-30.825), math.rad(15.986))}):Play()
-	tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(32.086), math.rad(49.217), math.rad(-0.401))}):Play()
-	tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(41.711), math.rad(45.665), math.rad(-13.923))}):Play()
-	tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig * CFrame.Angles(math.rad(-1.891), math.rad(7.391), math.rad(13.063))}):Play()
-	tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(math.rad(44.977), 0, 0)}):Play()
-	tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(60.012), 0, 0)}):Play()
-	tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-82.506), 0, 0)}):Play()
-	tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(17.471), 0, 0)}):Play()
-	tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-127.483), 0, 0)}):Play()
-	tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig * CFrame.Angles(math.rad(-0.229), math.rad(-5.959), math.rad(-4.584))}):Play()
 end
 local function transformAnim(character)
 	if character:FindFirstChild("UpperTorso") then
@@ -2913,7 +2971,7 @@ local function hardfall(stun, char)
 		if not stun or stun < 0.5 then stun = 0.5 end
 		print("hardfall")
 		local speed = 0.1
-		print("keyframe 1")
+		--print("keyframe 1")
 		tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.4, 0) * CFrame.Angles(math.rad(-90.012), 0, 0)}):Play()
 		--tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(157.449), math.rad(-75), math.rad(-0.057))}):Play()
 		tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(157.449), math.rad(-75), math.rad(-0.057))}):Play()
@@ -2931,7 +2989,7 @@ local function hardfall(stun, char)
 		--tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
 		task.delay(stun, function() 
 			local speed = 0.435
-			print("keyframe 2")
+			--print("keyframe 2")
 			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1, 0) * CFrame.Angles(math.rad(-37.471), 0, 0)}):Play()
 			--tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(28.762), math.rad(-9.339), math.rad(4.412))}):Play()
@@ -2950,7 +3008,7 @@ local function hardfall(stun, char)
 
 			task.delay(speed, function()
 				local speed = 0.1
-				print("keyframe 5")
+				--print("keyframe 5")
 				--tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig}):Play()
 				--tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 				tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(-2.807), math.rad(7.047), math.rad(-0.401))}):Play()
@@ -2968,7 +3026,7 @@ local function hardfall(stun, char)
 				--tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
 				task.delay(speed, function()
 					local speed = 0.1
-					print("keyframe 6")
+					--print("keyframe 6")
 					tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -0.9, 0) * CFrame.Angles(math.rad(-37.471), 0, 0)}):Play()
 					--tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 					tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(-2.005), math.rad(5.042), math.rad(-0.344))}):Play()
@@ -3015,7 +3073,7 @@ local function hardfall(stun, char)
 		if not stun or stun < 0.5 then stun = 0.5 end
 		print("hardfall")
 		local speed = 0.1
-		print("keyframe 1")
+		--print("keyframe 1")
 		tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.4, 0) * CFrame.Angles(math.rad(-90.012), 0, 0)}):Play()
 		--tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(157.449), math.rad(-75), math.rad(-0.057))}):Play()
 		tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(157.449), math.rad(-75), math.rad(-0.057))}):Play()
@@ -3033,7 +3091,7 @@ local function hardfall(stun, char)
 		--tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
 		task.delay(stun, function() 
 			local speed = 0.435
-			print("keyframe 2")
+			--print("keyframe 2")
 			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1, 0) * CFrame.Angles(math.rad(-37.471), 0, 0)}):Play()
 			--tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(28.762), math.rad(-9.339), math.rad(4.412))}):Play()
@@ -3052,7 +3110,7 @@ local function hardfall(stun, char)
 
 			task.delay(speed, function()
 				local speed = 0.1
-				print("keyframe 5")
+				--print("keyframe 5")
 				--tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig}):Play()
 				--tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 				tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(-2.807), math.rad(7.047), math.rad(-0.401))}):Play()
@@ -3070,7 +3128,7 @@ local function hardfall(stun, char)
 				--tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
 				task.delay(speed, function()
 					local speed = 0.1
-					print("keyframe 6")
+					--print("keyframe 6")
 					tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -0.9, 0) * CFrame.Angles(math.rad(-37.471), 0, 0)}):Play()
 					--tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 					tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(-2.005), math.rad(5.042), math.rad(-0.344))}):Play()
@@ -3087,7 +3145,7 @@ local function hardfall(stun, char)
 					--tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig}):Play()
 					--tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
 					task.delay(speed, function()
-						print("defaultPos")
+						--print("defaultPos")
 						defaultPos(0.35)
 					end)
 				end)
@@ -3170,6 +3228,7 @@ local function flamepunchStart(speedM)
 	end)
 end
 local function flamepunch(speedM, endDuration, ending)
+	larm.Name, llarm.Name, rarm.Name, rlarm.Name = "animating", "animating", "animating", "animating"
 	if not endDuration then endDuration = 0.5 end
 	if not speedM then speedM = 1 end
 	local speed = 0.15
@@ -3190,6 +3249,7 @@ local function flamepunch(speedM, endDuration, ending)
 		task.delay(endDuration, function()
 			local speed = 0.4
 			if not ending then
+				larm.Name, llarm.Name, rarm.Name, rlarm.Name = "animating", "animating", "animating", "animating"
 				tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(66.979), math.rad(-2.349), math.rad(15.241))}):Play()
 				tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(83.308), math.rad(-13.121), math.rad(72.536))}):Play()
 				tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(72.651), math.rad(15.928), math.rad(-23.778))}):Play()
@@ -3213,7 +3273,6 @@ local fallsound = nil
 local falldb = false
 local function falldamage(player, action, target, value)
 	if falldb then return end
-	print(value)
 	if not fallsound or fallsound.Parent then
 		fallsound = Instance.new("Sound", hrp)
 		fallsound.Volume, fallsound.SoundId = "1", "rbxassetid://1055286841"
@@ -3221,7 +3280,6 @@ local function falldamage(player, action, target, value)
 	end
 	fallsound:Play()
 	if value < -35 then
-		print(math.abs(value/70))
 		hardfall(math.abs(value/85))
 		if hum.Health + value <= 0 then wait(0.05) end
 	end
@@ -3265,7 +3323,6 @@ local function drain(player, action, target, value)
 	if target:FindFirstChildWhichIsA("Humanoid") then
 		if target:FindFirstChildWhichIsA("Humanoid").Health - value <= 0 then
 			target:FindFirstChildWhichIsA("Humanoid").BreakJointsOnDeath = false
-			print(target:FindFirstChildWhichIsA("Humanoid").BreakJointsOnDeath)
 		end
 		target:FindFirstChildWhichIsA("Humanoid").Health -= value
 	end
@@ -3275,11 +3332,12 @@ end
 remote.OnServerEvent:Connect(function(player, action, target, value)
 	if player ~= owner then return end
 	if action == "crouch" then
+		crouching = true
 		crouch(0.1)
 	elseif action == "uncrouch" then
+		crouching = false
 		defaultPos(0.1)
 	elseif action == "fall" then
-		print("fall server")
 		falldamage(player, action, target, value)
 	elseif action == "transform" then
 		tform.Pitch = (100 + math.random(0, 15))/100
@@ -3461,7 +3519,6 @@ remote.OnServerEvent:Connect(function(player, action, target, value)
 				target.Humanoid.BreakJointsOnDeath = false
 				local falldmg = 55 - (math.pow(math.abs(target:FindFirstChildWhichIsA("BasePart").Velocity.Y) - 55, 1.25))
 				if falldmg > 0 then return end
-				print(falldmg)
 				local newfallsound = Instance.new("Sound", target:FindFirstChildWhichIsA("BasePart"))
 				newfallsound.Volume, newfallsound.SoundId = "1", "rbxassetid://1055286841"
 				newfallsound.Name = "fallsound"
@@ -3491,7 +3548,7 @@ remote.OnServerEvent:Connect(function(player, action, target, value)
 			rarm.Name, rlarm.Name = rarmName, rlarmName
 			stunAnim()
 			task.delay(4.25, function()
-				print('over')
+
 				stunned = false
 				tweenServ:Create(larmmotor, TweenInfo.new(0.25), {C0 = larmOrig}):Play()
 				tweenServ:Create(llarmmotor, TweenInfo.new(0.25), {C0 = llarmOrig}):Play()
@@ -3519,7 +3576,6 @@ remote.OnServerEvent:Connect(function(player, action, target, value)
 	elseif action == "releasePrimary" and usingPrimary then
 		endPrimary()
 	elseif action == "primary" then
-		print("primary - Server")
 		primary(player, action, target, value)
 	elseif action == "secondary" and not usingSecondary then
 		secondary(player, action, target, value)
@@ -3637,7 +3693,7 @@ local function cloak()
 		task.delay(0.167, function()
 			for _,v in pairs(origParts) do
 				if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" and not v.Parent:IsA("Accessory") then
-					tweenServ:Create(v, TweenInfo.new(0.35), {Transparency = 0.99}):Play()
+					tweenServ:Create(v, TweenInfo.new(0.35), {Transparency = 0.997}):Play()
 				elseif v:IsA("BasePart") and v.Parent:IsA("Accessory") then
 					tweenServ:Create(v, TweenInfo.new(0.35), {Transparency = 1}):Play()
 				end
@@ -3681,13 +3737,7 @@ local function cloak()
 			tweenServ:Create(headmotor, TweenInfo.new(0.2), {C0 = headOrig * CFrame.Angles(math.rad(-6.245), math.rad(-2.235), math.rad(-5.558))}):Play()
 		end)
 		task.delay(.933, function() 
-			if rarmmotor.C0 == rarmOrig *  CFrame.new(0.01, -0.1, 0.099) * CFrame.Angles(math.rad(64.572), math.rad(13.923), math.rad(-8.48)) then
-				tweenServ:Create(torsomotor, TweenInfo.new(0.2), {C0 = torsoOrig}):Play()
-				tweenServ:Create(larmmotor, TweenInfo.new(0.2), {C0 = larmOrig}):Play()
-				tweenServ:Create(rarmmotor, TweenInfo.new(0.2), {C0 = rarmOrig}):Play()
-				tweenServ:Create(headmotor, TweenInfo.new(0.2), {C0 = headOrig}):Play()
-				llarm.Name, larm.Name, rarm.Name, rlarm.Name = llarmName, larmName, rarmName, rlarmName
-			end
+			defaultPos(0.2)
 		end)
 
 	end
@@ -3702,7 +3752,7 @@ local function blackout()
 	local ambientInc = 0
 	local onCD = false
 	function primary(player, action, target, value)
-		if onCD then print("Cooldown") return end
+		if onCD then return end
 		usingPrimary = true
 		larm.Name, llarm.Name, rarm.Name, rlarm.Name = "animating", "animating", "animating", "animating"
 		tweenServ:Create(torsomotor, TweenInfo.new(0.15), {C0 = torsoOrig * CFrame.Angles(math.rad(-15.011), 0, 0)}):Play()
@@ -3713,7 +3763,6 @@ local function blackout()
 		tweenServ:Create(headmotor, TweenInfo.new(0.15), {C0 = headOrig * CFrame.Angles(math.rad(-15.011), 0, 0)}):Play()
 		for i = 1, 4, 0.1 do
 			if not usingPrimary then
-				print("severed")
 				rarmmotor.C0, rlarmmotor.C0, larmmotor.C0, llarmmotor.C0, torsomotor.C0, headmotor.C0 = rarmOrig, rlarmOrig, larmOrig, llarmOrig, torsoOrig, headOrig
 				llarm.Name, larm.Name, rarm.Name, rlarm.Name = llarmName, larmName, rarmName, rlarmName
 				return
@@ -3794,20 +3843,17 @@ local function blackout()
 		lights, brightness = {}, {}
 	end
 	function secondary(player, action, target, value)
-		warn("Crouch - Server")
-		crouch()
 	end
 	function endPrimary(player, action, target, value)
 		usingPrimary = false
 	end
 	function endSecondary(player, action, target, value)
-		warn("Uncrouch - Server")
-		defaultPos(0.15)
 	end
 end
 
 local function decoy()
 	local disguiseFace;
+	local displayName = ""
 	function primary(player, action, target, value)
 	end
 	function secondary(player, action, target, value)
@@ -3856,6 +3902,7 @@ local function decoy()
 			end
 			task.delay(1, function() alert:Destroy() end)
 		else
+			if target.Humanoid.DisplayName ~= "" and target.Humanoid.DisplayName ~= target.Name then displayName = target.Humanoid.DisplayName else displayName = target.Name end
 			local desc1, desc2 = game.Players:GetHumanoidDescriptionFromUserId(owner.UserId), game.Players:GetHumanoidDescriptionFromUserId(target:FindFirstChild("playerID").Value)
 			for _,v in pairs(char:GetDescendants()) do if v:IsA("Accessory") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then v:Destroy() end end
 			for _,v in pairs(target:GetDescendants()) do if v:IsA("Accessory") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then v:Destroy() end end
@@ -3879,7 +3926,7 @@ local function decoy()
 			lfoot, rfoot = char:FindFirstChild("LeftFoot"), char:FindFirstChild("RightFoot")
 			hrp = char.HumanoidRootPart
 			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.Viewer
-			hum.DisplayName = players:GetNameFromUserIdAsync(target:FindFirstChild("playerID").Value)
+			hum.DisplayName = displayName
 
 			rarmmotor = rarm.RightShoulder
 			larmmotor = larm.LeftShoulder
@@ -3992,9 +4039,6 @@ local function wildfire()
 				hitSound:Play()
 				tweenServ:Create(loopSound, TweenInfo.new(6), {Volume = 0}):Play()
 				target.Archivable = true
-				print(target)
-				print(target.Name)
-				print(target:FindFirstChildWhichIsA("Humanoid"))
 				local targHum = target:FindFirstChildOfClass("Humanoid")
 				if not targHum then return end
 				local pstand = targHum.PlatformStand
@@ -4011,7 +4055,7 @@ local function wildfire()
 					else print("literally no parts??") return
 					end
 				end
-				local rot = (target.PrimaryPart.Position - hrp.Position).Unit * 90 print(rot)
+				local rot = (target.PrimaryPart.Position - hrp.Position).Unit * 90 --print(rot)
 
 				if targHum.Health - 85 <= 0 then targHum.BreakJointsOnDeath = false end
 				targHum.Health -= 85
@@ -4052,16 +4096,9 @@ local function infect()
 		remote.OnServerEvent:Wait()
 		infectStart()
 		wait(0.5)
-		local scriptCheck, waiting = nil, true
-		local dietween = tweenServ:Create(target.Humanoid, TweenInfo.new(8), {Health = 0})
-		dietween:Play()
-		scriptCheck = target.DescendantAdded:Connect(function(v)
-			if v:IsA("LocalScript") then wait(0.1) if v.Name == "vampireLocal" then waiting = false print("Local found! infecting hehehe") dietween:Pause() scriptCheck:Disconnect() end end
-		end)
-		local newscript = script:Clone()
-		newscript.Parent = target
-		--newscript:ClearAllChildren()
-		while waiting do wait() if target.Humanoid.Health <= 0 then scriptCheck:Disconnect() return end end
+		target.Humanoid.Health = target.Humanoid.MaxHealth/4
+		wait()
+		local dietween = tweenServ:Create(target.Humanoid, TweenInfo.new(5), {Health = 0}):Play()
 	end
 end
 local abilityselect;
@@ -4072,7 +4109,7 @@ abilityselect = owner.Chatted:Connect(function(msg)
 	elseif string.lower(msg) == "> wildfire" then wildfire()
 	end
 end)
-infect()
+cloak()
 
 print("To swap abilities, type > and then the ability name in chat.")
 print("The current abilities are:")
