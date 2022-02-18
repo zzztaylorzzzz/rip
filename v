@@ -268,37 +268,37 @@ running = game:GetService("RunService").RenderStepped:Connect(function()
 				Cam.CameraType = Enum.CameraType.Custom
 			end
 		end
-		local CamCF = Cam.CoordinateFrame
-		if ((IsR6 and Body["Torso"]) or Body["UpperTorso"])~=nil and Body["Head"]~=nil then	
-			local TrsoLV = Trso.CFrame.lookVector
-			local HdPos = Head.CFrame.p
-			if IsR6 and Neck or Neck and Waist then	--[Make sure the Neck still exists.]
-				if Cam.CameraSubject:IsDescendantOf(Body) or Cam.CameraSubject:IsDescendantOf(Plr) then
-					local Dist = nil;
-					local Diff = nil;
-					if not MseGuide then	
-						Dist = (Head.CFrame.p-CamCF.p).magnitude
-						Diff = Head.CFrame.Y-CamCF.Y
-						--if not IsR6 then	
-						--	Neck.C0 = Neck.C0:lerp(NeckOrgnC0*Ang((aSin(Diff/Dist)*HeadVertFactor), -(((HdPos-CamCF.p).Unit):Cross(TrsoLV)).Y*HeadHorFactor, 0), UpdateSpeed/2)
-						--	Waist.C0 = Waist.C0:lerp(WaistOrgnC0*Ang((aSin(Diff/Dist)*BodyVertFactor), -(((HdPos-CamCF.p).Unit):Cross(TrsoLV)).Y*BodyHorFactor, 0), UpdateSpeed/2)
-						--else	
-						--	Neck.C0 = Neck.C0:lerp(NeckOrgnC0*Ang(-(aSin(Diff/Dist)*HeadVertFactor), 0, -(((HdPos-CamCF.p).Unit):Cross(TrsoLV)).Y*HeadHorFactor),UpdateSpeed/2)
-						--end
-					else
-						local Point = Mouse.Hit.p
-						Dist = (Head.CFrame.p-Point).magnitude
-						Diff = Head.CFrame.Y-Point.Y
-						--if not IsR6 then
-						--	Neck.C0 = Neck.C0:lerp(NeckOrgnC0*Ang(-(aTan(Diff/Dist)*HeadVertFactor), (((HdPos-Point).Unit):Cross(TrsoLV)).Y*HeadHorFactor, 0), UpdateSpeed/2)
-						--	Waist.C0 = Waist.C0:lerp(WaistOrgnC0*Ang(-(aTan(Diff/Dist)*BodyVertFactor), (((HdPos-Point).Unit):Cross(TrsoLV)).Y*BodyHorFactor, 0), UpdateSpeed/2)
-						--else
-						--	Neck.C0 = Neck.C0:lerp(NeckOrgnC0*Ang((aTan(Diff/Dist)*HeadVertFactor), 0, (((HdPos-Point).Unit):Cross(TrsoLV)).Y*HeadHorFactor), UpdateSpeed/2)
-						--end
-					end
-				end
-			end
-		end
+		--local CamCF = Cam.CoordinateFrame
+		--if ((IsR6 and Body["Torso"]) or Body["UpperTorso"])~=nil and Body["Head"]~=nil then	
+		--	local TrsoLV = Trso.CFrame.lookVector
+		--	local HdPos = Head.CFrame.p
+		--	if IsR6 and Neck or Neck and Waist then	--[Make sure the Neck still exists.]
+		--		--if Cam.CameraSubject:IsDescendantOf(Body) or Cam.CameraSubject:IsDescendantOf(Plr) then
+		--		--	--local Dist = nil;
+		--		--	--local Diff = nil;
+		--		--	--if not MseGuide then	
+		--		--	--	Dist = (Head.CFrame.p-CamCF.p).magnitude
+		--		--	--	Diff = Head.CFrame.Y-CamCF.Y
+		--		--	--	--if not IsR6 then	
+		--		--	--	--	Neck.C0 = Neck.C0:lerp(NeckOrgnC0*Ang((aSin(Diff/Dist)*HeadVertFactor), -(((HdPos-CamCF.p).Unit):Cross(TrsoLV)).Y*HeadHorFactor, 0), UpdateSpeed/2)
+		--		--	--	--	Waist.C0 = Waist.C0:lerp(WaistOrgnC0*Ang((aSin(Diff/Dist)*BodyVertFactor), -(((HdPos-CamCF.p).Unit):Cross(TrsoLV)).Y*BodyHorFactor, 0), UpdateSpeed/2)
+		--		--	--	--else	
+		--		--	--	--	Neck.C0 = Neck.C0:lerp(NeckOrgnC0*Ang(-(aSin(Diff/Dist)*HeadVertFactor), 0, -(((HdPos-CamCF.p).Unit):Cross(TrsoLV)).Y*HeadHorFactor),UpdateSpeed/2)
+		--		--	--	--end
+		--		--	--else
+		--		--	--	local Point = Mouse.Hit.p
+		--		--	--	Dist = (Head.CFrame.p-Point).magnitude
+		--		--	--	Diff = Head.CFrame.Y-Point.Y
+		--		--	--	--if not IsR6 then
+		--		--	--	--	Neck.C0 = Neck.C0:lerp(NeckOrgnC0*Ang(-(aTan(Diff/Dist)*HeadVertFactor), (((HdPos-Point).Unit):Cross(TrsoLV)).Y*HeadHorFactor, 0), UpdateSpeed/2)
+		--		--	--	--	Waist.C0 = Waist.C0:lerp(WaistOrgnC0*Ang(-(aTan(Diff/Dist)*BodyVertFactor), (((HdPos-Point).Unit):Cross(TrsoLV)).Y*BodyHorFactor, 0), UpdateSpeed/2)
+		--		--	--	--else
+		--		--	--	--	Neck.C0 = Neck.C0:lerp(NeckOrgnC0*Ang((aTan(Diff/Dist)*HeadVertFactor), 0, (((HdPos-Point).Unit):Cross(TrsoLV)).Y*HeadHorFactor), UpdateSpeed/2)
+		--		--	--	--end
+		--		--	--end
+		--		--end
+		--	end
+		--end
 	end
 	--if TurnCharacterToMouse == true then
 	--	Hum.AutoRotate = false
@@ -2852,6 +2852,31 @@ end
 
 -- Animations --
 local crouching = false
+local running = false
+local larmtween, llarmtween, rarmtween, rlarmtween
+local function isMoving()
+	local speed = (hrp.AssemblyLinearVelocity * Vector3.new(1, 0, 1)).Magnitude
+	if speed > 5 and vampire and not running and not usingPrimary and not usingSecondary and not victim and not crouching then
+		running = true
+		larm.Name, llarm.Name, rarm.Name, rlarm.Name = "animating", "animating", "animating", "animating"
+		larmtween = tweenServ:Create(larmmotor, TweenInfo.new(0.15), {C0 = larmOrig * CFrame.Angles(math.rad(-33.023), math.rad(-75), math.rad(-90.012))})
+		llarmtween = tweenServ:Create(llarmmotor, TweenInfo.new(0.15), {C0 = llarmOrig * CFrame.Angles(math.rad(15.063), 0, math.rad(-23.09))})
+		rarmtween = tweenServ:Create(rarmmotor, TweenInfo.new(0.15), {C0 = rarmOrig * CFrame.Angles(math.rad(-28.023), math.rad(75), math.rad(90.012))})
+		rlarmtween = tweenServ:Create(rlarmmotor, TweenInfo.new(0.15), {C0 = rlarmOrig * CFrame.Angles(math.rad(15.063), 0, math.rad(23.09))})
+		larmtween:Play() llarmtween:Play() rarmtween:Play() rlarmtween:Play()
+	elseif ((speed < 5 and running) or (not vampire and running)) and not usingPrimary and not usingSecondary and not victim and not crouching then
+		running = false
+		larm.Name, llarm.Name, rarm.Name, rlarm.Name = larmName, llarmName, rarmName, rlarmName
+		larmtween = tweenServ:Create(larmmotor, TweenInfo.new(0.15), {C0 = larmOrig})
+		llarmtween = tweenServ:Create(llarmmotor, TweenInfo.new(0.15), {C0 = llarmOrig})
+		rarmtween = tweenServ:Create(rarmmotor, TweenInfo.new(0.15), {C0 = rarmOrig})
+		rlarmtween = tweenServ:Create(rlarmmotor, TweenInfo.new(0.15), {C0 = rlarmOrig})
+		larmtween:Play() llarmtween:Play() rarmtween:Play() rlarmtween:Play()
+	end
+end
+hum.Running:Connect(function(speed)
+	isMoving()
+end)
 local function crouch(speed)
 	rarm.Name, rlarm.Name, rhand.Name = rarmName, "animating", "animting"
 	larm.Name, llarm.Name, lhand.Name = larmName, "animating","animating"
@@ -3548,7 +3573,6 @@ remote.OnServerEvent:Connect(function(player, action, target, value)
 			rarm.Name, rlarm.Name = rarmName, rlarmName
 			stunAnim()
 			task.delay(4.25, function()
-
 				stunned = false
 				tweenServ:Create(larmmotor, TweenInfo.new(0.25), {C0 = larmOrig}):Play()
 				tweenServ:Create(llarmmotor, TweenInfo.new(0.25), {C0 = llarmOrig}):Play()
@@ -3561,14 +3585,14 @@ remote.OnServerEvent:Connect(function(player, action, target, value)
 	elseif action == "stopdraining" then
 		draining = false
 		pcall(function() headbob:Disconnect() end)
-		if victim then
+		if victim and not stunned then
 			torsomotor.C0 = torsoOrig * CFrame.Angles(math.rad(-4.011), 0, 0)
 			larmmotor.C0 = larmOrig * CFrame.Angles(math.rad(75.287), math.rad(-1.662), math.rad(0.63))
 			llarmmotor.C0 = llarmOrig * CFrame.Angles(math.rad(28.533), math.rad(-4.641), math.rad(49.79))
 			rarmmotor.C0 = rarmOrig * CFrame.Angles(math.rad(74.886), math.rad(-14.725), math.rad(37.242))
 			rlarmmotor.C0 = rlarmOrig * CFrame.Angles(math.rad(-1.948), math.rad(1.146), math.rad(-27.502))
 			headmotor.C0 = headOrig
-		else
+		elseif not victim and not stunned then
 			rarmmotor.C0, rlarmmotor.C0, larmmotor.C0, llarmmotor.C0, torsomotor.C0, headmotor.C0 = rarmOrig, rlarmOrig, larmOrig, llarmOrig, torsoOrig, headOrig
 			llarm.Name, larm.Name, rarm.Name, rlarm.Name = llarmName, larmName, rarmName, rlarmName
 		end
