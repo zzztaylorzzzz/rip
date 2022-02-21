@@ -124,7 +124,7 @@ function thescript(owner)
 					hum.Health = hum.MaxHealth
 				end
 			end)
-			charDied = char.Humanoid.Died:Connect(function()
+			charDied = hum.Died:Connect(function()
 				newChild:Disconnect()
 				charDied:Disconnect()
 				print("died :(")
@@ -2427,7 +2427,7 @@ animate()]], script)
 		end)
 
 
-		local character = owner.Character
+		local character = char
 		character.Humanoid.MaxHealth = 285
 		character.Humanoid.Health = character.Humanoid.MaxHealth
 
@@ -2678,7 +2678,7 @@ animate()]], script)
 			end)
 		end
 
-		character.Humanoid.Died:Connect(function() 
+		hum.Died:Connect(function() 
 			local ouchie = Instance.new("Sound")
 			ouchie.Parent = char.Head
 			ouchie.SoundId = "rbxassetid://175505949"
