@@ -8,7 +8,7 @@ if not owner then
 end
 local origOwner = owner
 local thescript;
-warn("NEW")
+warn("NEW2")
 function thescript(owner)
 	local entirescript = coroutine.wrap(function()
 		local studio = false
@@ -2714,9 +2714,6 @@ for _,v in pairs(workspace:GetChildren()) do if v.Name == "zenvetierem" then v:D
 for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or v.Name == "CircleProgressGui" or v.Name == "VH3AbilityUI" then v:Destroy() end end
 ]], owner.Character)
 			end
-			owner.Character.ChildAdded:Wait()
-			primaryScript:Destroy()	
-			script:Destroy()
 		end)
 
 		local vampire = false
