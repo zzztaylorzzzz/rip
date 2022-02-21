@@ -8,6 +8,7 @@ if not owner then
 end
 local origOwner = owner
 local thescript;
+warn("NEW")
 function thescript(owner)
 	local entirescript = coroutine.wrap(function()
 		local studio = false
