@@ -36,7 +36,8 @@ function thescript(owner, infector)
 			ability.Value = "Infect"
 		end
 
-		table.insert(activeVampires, owner.Name)
+		local survived = false
+		table.insert(activeVampires, owner)
 		local studio = false
 		local r15 = false
 		local char = owner.Character
@@ -499,7 +500,7 @@ function thescript(owner, infector)
 		dietween:Play()
 		hum.AutoRotate = false
 		hum.WalkSpeed = 0 hum.JumpPower = 0 infectStart()
-
+ 
 		character.Humanoid.BreakJointsOnDeath = false
 		character.Humanoid.Health = 100
 		local newChild, charDied;
@@ -510,6 +511,7 @@ function thescript(owner, infector)
 		warning.ObjectText, warning.ActionText, warning.KeyboardKeyCode = "You are being infected!", "Accept the script request to avoid death", Enum.KeyCode.Minus
 		newChild = remote.OnServerEvent:Connect(function(player, msg)
 			if player == owner and msg == "infected" then
+				survived = true
 				warning:Destroy()
 				newChild:Disconnect()
 				charDied:Disconnect()
@@ -536,7 +538,7 @@ function thescript(owner, infector)
 		charDied = runServ.Heartbeat:Connect(function()
 			local closestHum, closestHumDist = nil, math.huge
 			if hum.Health > 1 then return end
-			local speed, stun = 0.25, 2
+			local speed, stun = 0.25, 0
 			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.4, 0) * CFrame.Angles(math.rad(-90.012), 0, 0)}):Play()
 			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(157.449), math.rad(-75), math.rad(-0.057))}):Play()
@@ -554,7 +556,7 @@ function thescript(owner, infector)
 			tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
 			dietween:Pause()
 			print(owner.Name)
-			table.remove(activeVampires, table.find(activeVampires, owner.Name))
+			table.remove(activeVampires, table.find(activeVampires, owner))
 			warning:Destroy()
 			newChild:Disconnect()
 			charDied:Disconnect()
@@ -572,10 +574,26 @@ function thescript(owner, infector)
 			wait(0.5)
 			hum.WalkSpeed, hum.JumpPower, hum.AutoRotate = 16, 70, true
 			hum.Health = 100
+			for _,v in pairs(newchar:GetDescendants()) do if v:IsA("BasePart") then v:SetNetworkOwner(nil) end end
+			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.4, 0) * CFrame.Angles(math.rad(-90.012), 0, 0)}):Play()
+			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
+			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(157.449), math.rad(-75), math.rad(-0.057))}):Play()
+			tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig}):Play()
+			tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+			tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(92.475), math.rad(73.281), math.rad(64.973))}):Play()
+			tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(15.011), 0, 0)}):Play()
+			tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+			tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig}):Play()
+			tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(5.271), math.rad(-12.376), math.rad(-11.345))}):Play()
+			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-28.934), math.rad(-5.615), math.rad(3.209))}):Play()
+			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+			tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(12.777), math.rad(12.376), math.rad(11.345))}):Play()
+			tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-29.335), math.rad(3.896), math.rad(-1.891))}):Play()
+			tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
 			local waiting = true
 			while waiting do
-				print(waiting)
-				wait(2)
+				--print(waiting)
+				wait(0.25)
 				for _,v in pairs(workspace:GetDescendants()) do
 					if v ~= hum and v:IsA("Humanoid") and v.Parent:FindFirstChildWhichIsA("BasePart") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 15 then
 						print("close enough!")
@@ -3562,13 +3580,16 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 ]], owner.Character)
 			end
 			print(owner.Name)
-			for _,v in pairs(workspace:GetDescendants()) do if v.Name == "BlackoutActive" then print(v.Name) v.AncestryChanged:Wait() end end
-			table.remove(activeVampires, table.find(activeVampires, owner.Name))
-			if #activeVampires <= 0 then
-				for _,v in pairs(script:GetChildren()) do if v:IsA("Model") and v:FindFirstChildWhichIsA("Humanoid") then v.Parent = workspace end end
-				warn("DELETE")
-				script:Destroy()
+			if survived then
+				for _,v in pairs(workspace:GetDescendants()) do if v.Name == "BlackoutActive" then print(v.Name) v.AncestryChanged:Wait() end end
+				table.remove(activeVampires, table.find(activeVampires, owner))
+				if #activeVampires <= 0 then
+					for _,v in pairs(script:GetChildren()) do if v:IsA("Model") and v:FindFirstChildWhichIsA("Humanoid") then v.Parent = workspace end end
+					warn("DELETE")
+					script:Destroy()
+				end
 			end
+
 		end)
 
 		local swingCD = false
