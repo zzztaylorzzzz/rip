@@ -5229,8 +5229,9 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 		print("> infect")
 		print("animbruh")
 
-		local npcMovement;
+		local npcMovement, grabCD;
 		npcMovement = coroutine.wrap(function()
+			grabCD = false
 			defaultPos(0.35)
 			wait(1)
 			local closestHum, closestHumDist = nil, math.huge
@@ -5246,15 +5247,20 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 					end
 				end
 				if closestHum and closestHum.Parent and closestHum.Health > 0 then
-					hum:MoveTo(closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position, closestHum.Parent:FindFirstChildWhichIsA("BasePart"))
-					if (closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 4 then
+					hum:MoveTo(closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position + (hrp.Position - closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position).Unit*2)
+					if not grabCD and (closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 4 then
+						grabCD = true
 						swing()
-						closestHum:TakeDamage(12)
+						if closestHum.Health - 10 <= 0 then closestHum.BreakJointsOnDeath = false end
+						closestHum:TakeDamage(10)
+						if closestHum.Health <= 0 then ragdoll(closestHum.Parent) end
+						wait(0.65)
+						grabCD = false
 					end
 					print(closestHum.Parent.Name)
 				end
 
-				wait(1.5)
+				wait(0.1)
 			end
 		end)
 		if character ~= char then
