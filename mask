@@ -3860,7 +3860,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end
 		end
 		hum.Running:Connect(function(speed)
-			print("running")
+			--print("running")
 			isMoving()
 		end)
 		local function sit(speed)
