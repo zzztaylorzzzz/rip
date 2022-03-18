@@ -37,10 +37,20 @@ function thescript(owner, infector)
 		end
 
 		local survived = false
-		table.insert(activeVampires, owner)
+		local isNPC = false
+		if owner:IsA("Player") then
+			table.insert(activeVampires, owner)
+		else
+			isNPC = true
+		end
 		local studio = false
 		local r15 = false
-		local char = owner.Character
+		local char;
+		if isNPC then
+			char = owner
+		else
+			char = owner.Character
+		end
 		script.Name = "vampire"
 
 		local players = game:GetService("Players")
@@ -66,8 +76,10 @@ function thescript(owner, infector)
 			newchar.Humanoid:ApplyDescription(desc)
 			newchar.Humanoid.DisplayName = owner.Name
 			newchar.PrimaryPart.CFrame = char.PrimaryPart.CFrame
-			owner.Character = newchar
-			char:Destroy()
+			if not isNPC then
+				owner.Character = newchar
+				char:Destroy()
+			end
 			char = newchar
 			char.PrimaryPart = char:FindFirstChild("HumanoidRootPart")
 			local newhum = char:WaitForChild("Humanoid")
@@ -144,7 +156,7 @@ function thescript(owner, infector)
 		local vampire = false
 		local origParts, origColors, origMats, origTrans = {}, {}, {}, {}
 		local rPos, lPos = 0, 0
-		local face = owner.Character.Head:FindFirstChild("face")
+		local face = char.Head:FindFirstChild("face")
 		local origFace;
 		if face then origFace = face.Texture end
 
@@ -353,7 +365,7 @@ function thescript(owner, infector)
 			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-105.023), 0, 0)}):Play()
 			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
 			wait(3)
-			playerRemote:FireClient(owner, "animFinished")
+			if not isNPC then playerRemote:FireClient(owner, "animFinished") end
 		end
 		local function infectRecover(char)
 			local speed = 0.15
@@ -461,7 +473,7 @@ function thescript(owner, infector)
 			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig}):Play()
 			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
 			wait(speed)
-			playerRemote:FireClient(owner, "gotUp")
+			if not isNPC then playerRemote:FireClient(owner, "gotUp") end
 			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig}):Play()
 			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(-19.996), 0, 0)}):Play()
 			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(8.995), 0, 0)}):Play()
@@ -500,7 +512,7 @@ function thescript(owner, infector)
 		dietween:Play()
 		hum.AutoRotate = false
 		hum.WalkSpeed = 0 hum.JumpPower = 0 infectStart()
- 
+
 		character.Humanoid.BreakJointsOnDeath = false
 		character.Humanoid.Health = 100
 		local newChild, charDied;
@@ -570,7 +582,7 @@ function thescript(owner, infector)
 			newchar.Name = char.Name
 			char:Destroy()
 			char = newchar
-			owner:LoadCharacter()
+			if not isNPC then owner:LoadCharacter() end
 			wait(0.5)
 			hum.WalkSpeed, hum.JumpPower, hum.AutoRotate = 16, 70, true
 			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
@@ -591,7 +603,7 @@ function thescript(owner, infector)
 			tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(12.777), math.rad(12.376), math.rad(11.345))}):Play()
 			tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-29.335), math.rad(3.896), math.rad(-1.891))}):Play()
 			tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
-			local waiting = true
+			waiting = true
 			while waiting do
 				--print(waiting)
 				wait(0.25)
@@ -602,7 +614,7 @@ function thescript(owner, infector)
 					end
 				end
 			end
-			
+			vampire = true
 			tform.Pitch = (100 + math.random(0, 15))/100
 			tform:Play()
 			if face then face.Texture = "rbxassetid://1111587497" end
@@ -629,7 +641,7 @@ function thescript(owner, infector)
 					table.insert(origTrans, v.Transparency)
 				end
 			end
-			
+
 			task.delay(stun, function()
 				local speed = 0.2
 				tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.2, 0) * CFrame.Angles(math.rad(-97.517), 0, 0)}):Play()
@@ -720,31 +732,6 @@ function thescript(owner, infector)
 				tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-63.14), math.rad(15.756), math.rad(-2.521))}):Play()
 				tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
 			end)
-			task.delay(stun + 1.15, function()
-				print("animbruh")
-
-				defaultPos(0.35)
-				local closestHum, closestHumDist = nil, math.huge
-				print("start")
-				while hum and hum.Parent and hum.Health > 0 do
-					print("loop")
-					if not closestHum or closestHum.Parent or closestHum.Health < 0 then
-						closestHumDist = math.huge
-						for _,v in pairs(workspace:GetDescendants()) do
-							if v ~= hum and v:IsA("Humanoid") and v.Parent:FindFirstChildWhichIsA("BasePart") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < closestHumDist and v.Health > 0 then
-								closestHum, closestHumDist = v, (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude
-							end
-						end
-					end
-					if closestHum and closestHum.Parent and closestHum.Health > 0 then
-						hum:MoveTo(closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position, closestHum.Parent:FindFirstChildWhichIsA("BasePart"))
-						if (closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 4 then closestHum:TakeDamage(12) end
-						print(closestHum.Parent.Name)
-					end
-
-					wait(1.5)
-				end
-			end)
 
 		end)
 		if not infector then
@@ -757,6 +744,8 @@ function thescript(owner, infector)
 
 		end
 
+
+		warn("continued")
 		local stunned = false
 
 		local escSuccess, escFail = 15, 25
@@ -3279,7 +3268,7 @@ animate()]], script)
 		if infector then abilityInd.Value = script.Ability.Value primaryScript.Name = "minion" end
 		abilityInd.Parent = primaryScript
 		wait()
-		primaryScript.Parent = owner.Character
+		primaryScript.Parent = char
 		primaryScript.Disabled = false
 		remoteValue.Parent = primaryScript
 		local ambienttracker = Instance.new("Color3Value")
@@ -3291,6 +3280,7 @@ animate()]], script)
 			odambienttracker.Value = lighting.OutdoorAmbient
 		end)
 
+		warn("Made it past the script stuff..")
 		local RagdollJoints
 		local function ragjoints()
 			RagdollJoints = Instance.new("Folder")
@@ -3580,20 +3570,20 @@ animate()]], script)
 			ouchie:Play()
 			ragdoll(character)
 			wait(7)
-			if char == owner.Character then
+			if not isNPC and char == owner.Character then
 				owner:LoadCharacter()
 			end
 		end)
-
-		local ownerDied
-		ownerDied = owner.CharacterRemoving:Connect(function()
-			ownerDied:Disconnect()
-			owner.CharacterAdded:Wait()
-			wait()
-			if script:FindFirstChild("fixScript") then 
-				script.fixScript:Clone().Parent = owner.Character owner.Character:WaitForChild("fixScript").Disabled = false
-			else
-				NLS([[
+		if not isNPC then
+			local ownerDied
+			ownerDied = owner.CharacterRemoving:Connect(function()
+				ownerDied:Disconnect()
+				owner.CharacterAdded:Wait()
+				wait()
+				if script:FindFirstChild("fixScript") then 
+					script.fixScript:Clone().Parent = owner.Character owner.Character:WaitForChild("fixScript").Disabled = false
+				else
+					NLS([[
 if not owner then owner = game:GetService("Players").LocalPlayer end
 print("Fixing")
 owner.CameraMode = Enum.CameraMode.Classic
@@ -3606,20 +3596,20 @@ for _, v in pairs(game:GetService("Lighting"):GetChildren()) do if v.Name == "ze
 for _,v in pairs(workspace:GetChildren()) do if v.Name == "zenvetierem" then v:Destroy() end end
 for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or v.Name == "CircleProgressGui" or v.Name == "VH3AbilityUI" then v:Destroy() end end
 ]], owner.Character)
-			end
-			print(owner.Name)
-			if survived then
-				for _,v in pairs(workspace:GetDescendants()) do if v.Name == "BlackoutActive" then print(v.Name) v.AncestryChanged:Wait() end end
-				table.remove(activeVampires, table.find(activeVampires, owner))
-				if #activeVampires <= 0 then
-					for _,v in pairs(script:GetChildren()) do if v:IsA("Model") and v:FindFirstChildWhichIsA("Humanoid") then v.Parent = workspace end end
-					warn("DELETE")
-					script:Destroy()
 				end
-			end
+				print(owner.Name)
+				if survived then
+					for _,v in pairs(workspace:GetDescendants()) do if v.Name == "BlackoutActive" then print(v.Name) v.AncestryChanged:Wait() end end
+					table.remove(activeVampires, table.find(activeVampires, owner))
+					if #activeVampires <= 0 then
+						for _,v in pairs(script:GetChildren()) do if v:IsA("Model") and v:FindFirstChildWhichIsA("Humanoid") then v.Parent = workspace end end
+						warn("DELETE")
+						script:Destroy()
+					end
+				end
 
-		end)
-
+			end)
+		end
 		local swingCD = false
 		local netowner;
 		local targPlr;
@@ -3824,7 +3814,11 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 
 				if escProg >= 100 then
 					stunned = true
-					playerRemote:FireClient(owner, "escaped")
+					if not isNPC then
+						playerRemote:FireClient(owner, "escaped")
+					else
+
+					end
 				end
 				if ui and ui.Parent and pbar.Parent and blabel.Parent and gradient.Parent then
 					if escKey == "W" then gradient.Color = blue
@@ -3838,7 +3832,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end)
 			table.insert(escConnections, keypress)
 		end
-
+		warn("escape keys")
 		-- Animations --
 		local crouching = false
 		local running = false
@@ -3866,6 +3860,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end
 		end
 		hum.Running:Connect(function(speed)
+			print("running")
 			isMoving()
 		end)
 		local function sit(speed)
@@ -3896,6 +3891,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 
 		while waiting do wait(0.1) end
 		if infector then defaultPos(0.25) end
+		warn("got past waiting")
 
 		local function stunAnim()
 			--print("animating")
@@ -3929,7 +3925,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end
 		end
 		local function hardfall(stun, char)
-			if char and char ~= owner.Character and char:FindFirstChild("UpperTorso") then
+			if char and (char ~= owner.Character or char ~= owner) and char:FindFirstChild("UpperTorso") then
 				local head = char.Head
 				local rarm = char:FindFirstChild("RightUpperArm")
 				local larm = char:FindFirstChild("LeftUpperArm")
@@ -4196,6 +4192,43 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end
 
 		end
+		local function swing()
+			swingCD = true
+			rarmmotor.C0, rlarmmotor.C0, larmmotor.C0, llarmmotor.C0 = rarmOrig, rlarmOrig, larmOrig, llarmOrig
+			llarm.Name, larm.Name, rarm.Name, rlarm.Name = llarmName, larmName, rarmName, rlarmName
+			rarm.Name = "animating"
+			local torsoGoal1, headGoal1 = upperTorso.Waist.C0 * CFrame.Angles(math.rad(10), 0, 0), head.Neck.C0 * CFrame.Angles(math.rad(-10), 0, 0)
+			local rarmGoal1 = rarmmotor.C0 * CFrame.Angles(math.rad(165), math.rad(90), math.rad(10))
+			local torsoGoal2, headGoal2 = upperTorso.Waist.C0 * CFrame.Angles(math.rad(-10), 0, 0), head.Neck.C0 * CFrame.Angles(math.rad(10), 0, 0)
+			local rarmGoal2 = rarmmotor.C0 * CFrame.Angles(math.rad(20), math.rad(35), math.rad(-20))
+			tweenServ:Create(upperTorso.Waist, TweenInfo.new(0.125), {C0 = torsoGoal1}):Play()
+			tweenServ:Create(head.Neck, TweenInfo.new(0.125), {C0 = headGoal1}):Play()
+			tweenServ:Create(rarmmotor, TweenInfo.new(0.125), {C0 = rarmGoal1}):Play()
+			task.delay(0.125, function()
+				tweenServ:Create(upperTorso.Waist, TweenInfo.new(0.15), {C0 = torsoGoal2}):Play()
+				tweenServ:Create(head.Neck, TweenInfo.new(0.15), {C0 = headGoal2}):Play()
+				tweenServ:Create(rarmmotor, TweenInfo.new(0.15), {C0 = rarmGoal2}):Play()
+			end)
+			task.delay(0.3, function()
+				swingCD = false
+				upperTorso.Waist.C0, head.Neck.C0 = torsoOrig, headOrig
+				if victim then
+					rarmmotor.C0 = rarmOrig * CFrame.Angles(math.rad(74.886), math.rad(-14.725), math.rad(37.242))
+					rlarmmotor.C0 = rlarmOrig * CFrame.Angles(math.rad(-1.948), math.rad(1.146), math.rad(-27.502))
+				elseif running then
+					larm.Name, llarm.Name, rarm.Name, rlarm.Name = "animating", "animating", "animating", "animating"
+					larmtween = tweenServ:Create(larmmotor, TweenInfo.new(0.15), {C0 = larmOrig * CFrame.Angles(math.rad(-33.023), math.rad(-75), math.rad(-90.012))})
+					llarmtween = tweenServ:Create(llarmmotor, TweenInfo.new(0.15), {C0 = llarmOrig * CFrame.Angles(math.rad(15.063), 0, math.rad(-23.09))})
+					rarmtween = tweenServ:Create(rarmmotor, TweenInfo.new(0.15), {C0 = rarmOrig * CFrame.Angles(math.rad(-28.023), math.rad(75), math.rad(90.012))})
+					rlarmtween = tweenServ:Create(rlarmmotor, TweenInfo.new(0.15), {C0 = rlarmOrig * CFrame.Angles(math.rad(15.063), 0, math.rad(23.09))})
+					larmtween:Play() llarmtween:Play() rarmtween:Play() rlarmtween:Play()
+				else
+					rarm.Name = rarmName
+					rarmmotor.C0 = rarmOrig
+				end
+			end)
+		end
+
 
 		-- Ability related anims --
 		local function flamepunchStart(speedM)
@@ -4331,7 +4364,16 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				end
 				--hrp.CFrame = hrp.CFrame * CFrame.new(0, 0.25, 0)
 				fallvictim.Humanoid.Health += value*1.25
-				if fallvictim.Humanoid.Health <= 0 then playerRemote:FireClient(owner, "drop") if fallvictim.PrimaryPart then fallvictim.PrimaryPart.Anchored = true end end
+				if fallvictim.Humanoid.Health <= 0 and not isNPC then
+					if not isNPC then 
+						playerRemote:FireClient(owner, "drop")
+					else
+
+					end
+					if fallvictim.PrimaryPart then 
+						fallvictim.PrimaryPart.Anchored = true
+					end
+				end
 				wait()
 				if fallvictim.Humanoid.Health <= 0 then ragdoll(fallvictim, CFrame.new(0, 2, 0), 1) end
 				hum.Health += value
@@ -4364,6 +4406,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			char.Humanoid.Health += 6
 		end
 		---- Remote ----
+		warn("now onto the remote stuff")
 		remote.OnServerEvent:Connect(function(player, action, target, value)
 			if player ~= owner then return end
 			if action == "crouch" then
@@ -4384,7 +4427,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 					vampire = true
 					if face then face.Texture = "rbxassetid://1111587497" end
 					transformAnim(char)
-					for _,v in pairs(owner.Character:GetDescendants()) do
+					for _,v in pairs(char:GetDescendants()) do
 						if v:IsA("BasePart") and not v.Parent:IsA("Accessory") then
 							table.insert(origParts, v)
 							table.insert(origColors, v.Color)
@@ -4419,33 +4462,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 					end
 				end
 			elseif action == "swing" and not swingCD then
-				swingCD = true
-				rarmmotor.C0, rlarmmotor.C0, larmmotor.C0, llarmmotor.C0 = rarmOrig, rlarmOrig, larmOrig, llarmOrig
-				llarm.Name, larm.Name, rarm.Name, rlarm.Name = llarmName, larmName, rarmName, rlarmName
-				rarm.Name = "animating"
-				local torsoGoal1, headGoal1 = upperTorso.Waist.C0 * CFrame.Angles(math.rad(10), 0, 0), head.Neck.C0 * CFrame.Angles(math.rad(-10), 0, 0)
-				local rarmGoal1 = rarmmotor.C0 * CFrame.Angles(math.rad(165), math.rad(90), math.rad(10))
-				local torsoGoal2, headGoal2 = upperTorso.Waist.C0 * CFrame.Angles(math.rad(-10), 0, 0), head.Neck.C0 * CFrame.Angles(math.rad(10), 0, 0)
-				local rarmGoal2 = rarmmotor.C0 * CFrame.Angles(math.rad(20), math.rad(35), math.rad(-20))
-				tweenServ:Create(upperTorso.Waist, TweenInfo.new(0.125), {C0 = torsoGoal1}):Play()
-				tweenServ:Create(head.Neck, TweenInfo.new(0.125), {C0 = headGoal1}):Play()
-				tweenServ:Create(rarmmotor, TweenInfo.new(0.125), {C0 = rarmGoal1}):Play()
-				task.delay(0.125, function()
-					tweenServ:Create(upperTorso.Waist, TweenInfo.new(0.15), {C0 = torsoGoal2}):Play()
-					tweenServ:Create(head.Neck, TweenInfo.new(0.15), {C0 = headGoal2}):Play()
-					tweenServ:Create(rarmmotor, TweenInfo.new(0.15), {C0 = rarmGoal2}):Play()
-				end)
-				task.delay(0.3, function()
-					swingCD = false
-					upperTorso.Waist.C0, head.Neck.C0 = torsoOrig, headOrig
-					if victim then
-						rarmmotor.C0 = rarmOrig * CFrame.Angles(math.rad(74.886), math.rad(-14.725), math.rad(37.242))
-						rlarmmotor.C0 = rlarmOrig * CFrame.Angles(math.rad(-1.948), math.rad(1.146), math.rad(-27.502))
-					else
-						rarm.Name = rarmName
-						rarmmotor.C0 = rarmOrig
-					end
-				end)
+				swing()
 			elseif action == "hit" then
 				for _,v in pairs(workspace:GetDescendants()) do if v.Name == target and v:FindFirstChildWhichIsA("Humanoid") and v:FindFirstChild("uniquegrabid") and v.uniquegrabid.Value == value then target = v end end
 				victim = target
@@ -4460,15 +4477,19 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 						if v.Anchored then victim = nil return end
 						pcall(function() phys:SetPartCollisionGroup(v, "grabCollision") end)
 						netowner = v:GetNetworkOwner()
-						v:SetNetworkOwner(owner)
+						if not isNPC then
+							v:SetNetworkOwner(owner)
+						else
+							v:SetNetworkOwner(nil)
+						end
 					end
 				end
 				victim.Humanoid.PlatformStand = true
-				playerRemote:FireClient(owner)
+				if not isNPC then playerRemote:FireClient(owner) end
 				for _,v in pairs(target:GetDescendants()) do if v:isA("BasePart") then
 						if v.Anchored then victim = nil return end
 						pcall(function() phys:SetPartCollisionGroup(v, "grabCollision") end)
-						v:SetNetworkOwner(owner)
+						if not isNPC then v:SetNetworkOwner(owner) else v:SetNetworkOwner(nil) end
 					end
 				end
 				victim.Humanoid.PlatformStand = true
@@ -4552,9 +4573,9 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				if not target:FindFirstChildWhichIsA("Humanoid") or target:FindFirstChildWhichIsA("Humanoid").Health <= 0 then
 					ragdoll(target)
 					wait(0.1)
-					playerRemote:FireClient(owner)
+					if not isNPC then playerRemote:FireClient(owner) end
 				else
-					playerRemote:FireClient(owner)
+					if not isNPC then playerRemote:FireClient(owner) end
 					for _,v in pairs(target:GetDescendants()) do
 						if v:IsA("BasePart") and not v.Anchored then
 							if targPlr then
@@ -4608,7 +4629,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 						task.delay(0.25, function() larm.Name, llarm.Name = larmName, llarmName end)
 					end)
 				end
-				playerRemote:FireClient(owner)
+				if not isNPC then playerRemote:FireClient(owner) end
 			elseif action == "draining" and target then
 				drain(player, action, target, value)
 			elseif action == "stopdraining" then
@@ -5167,19 +5188,26 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				remote.OnServerEvent:Wait()
 				target.Humanoid.WalkSpeed = 0
 				target.Humanoid.JumpPower = 0
-				thescript(players:GetPlayerFromCharacter(target), owner)
+				if players:GetPlayerFromCharacter(target) then 
+					thescript(players:GetPlayerFromCharacter(target), owner)
+				else
+					thescript(target, owner)
+				end
 
 			end
 		end
-		local abilityselect;
-		abilityselect = owner.Chatted:Connect(function(msg)
-			if string.lower(msg) == "> blackout" then blackout()
-			elseif string.lower(msg) == "> cloak" then cloak()
-			elseif string.lower(msg) == "> decoy" then decoy()
-			elseif string.lower(msg) == "> wildfire" then wildfire()
-			elseif string.lower(msg) == "> infect" then infect()
-			end
-		end)
+		if not isNPC then 
+			local abilityselect;
+			abilityselect = owner.Chatted:Connect(function(msg)
+				if string.lower(msg) == "> blackout" then blackout()
+				elseif string.lower(msg) == "> cloak" then cloak()
+				elseif string.lower(msg) == "> decoy" then decoy()
+				elseif string.lower(msg) == "> wildfire" then wildfire()
+				elseif string.lower(msg) == "> infect" then infect()
+				end
+			end)
+		end
+
 		if script.Ability.Value == "Cloak" then
 			cloak()
 		elseif script.Ability.Value == "Decoy" then
@@ -5199,6 +5227,42 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 		print("> decoy")
 		print("> wildfire")
 		print("> infect")
+		print("animbruh")
+
+		local npcMovement;
+		npcMovement = coroutine.wrap(function()
+			defaultPos(0.35)
+			wait(1)
+			local closestHum, closestHumDist = nil, math.huge
+			print("start")
+			while hum and hum.Parent and hum.Health > 0 do
+				print("loop")
+				if not closestHum or closestHum.Parent or closestHum.Health < 0 then
+					closestHumDist = math.huge
+					for _,v in pairs(workspace:GetDescendants()) do
+						if v ~= hum and v:IsA("Humanoid") and v.Parent:FindFirstChildWhichIsA("BasePart") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < closestHumDist and v.Health > 0 then
+							closestHum, closestHumDist = v, (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude
+						end
+					end
+				end
+				if closestHum and closestHum.Parent and closestHum.Health > 0 then
+					hum:MoveTo(closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position, closestHum.Parent:FindFirstChildWhichIsA("BasePart"))
+					if (closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 4 then
+						swing()
+						closestHum:TakeDamage(12)
+					end
+					print(closestHum.Parent.Name)
+				end
+
+				wait(1.5)
+			end
+		end)
+		if character ~= char then
+			isNPC = true
+			wait(1)
+			npcMovement()
+		end
+
 	end)
 	entirescript()
 end
