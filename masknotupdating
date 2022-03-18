@@ -608,7 +608,7 @@ function thescript(owner, infector)
 				--print(waiting)
 				wait(0.25)
 				for _,v in pairs(workspace:GetDescendants()) do
-					if v ~= hum and v:IsA("Humanoid") and v.Parent:FindFirstChildWhichIsA("BasePart") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 15 then
+					if v ~= hum and v:IsA("Humanoid") and v.Health > 0 and v.PlatformStand == false and v.Parent:FindFirstChildWhichIsA("BasePart") and not v.Parent:FindFirstChild("Vampire") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 15 then
 						print("close enough!")
 						waiting = false
 					end
@@ -5240,7 +5240,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				if not closestHum or closestHum.Parent or closestHum.Health < 0 then
 					closestHumDist = math.huge
 					for _,v in pairs(workspace:GetDescendants()) do
-						if v ~= hum and v:IsA("Humanoid") and v.Parent:FindFirstChildWhichIsA("BasePart") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < closestHumDist and v.Health > 0 then
+						if v ~= hum and v:IsA("Humanoid") and v.Health > 0 and not v.Parent:FindFirstChild("Vampire") and v.Parent:FindFirstChildWhichIsA("BasePart") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < closestHumDist then
 							closestHum, closestHumDist = v, (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude
 						end
 					end
