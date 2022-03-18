@@ -573,6 +573,7 @@ function thescript(owner, infector)
 			owner:LoadCharacter()
 			wait(0.5)
 			hum.WalkSpeed, hum.JumpPower, hum.AutoRotate = 16, 70, true
+			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 			hum.Health = 100
 			for _,v in pairs(newchar:GetDescendants()) do if v:IsA("BasePart") then v:SetNetworkOwner(nil) end end
 			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.4, 0) * CFrame.Angles(math.rad(-90.012), 0, 0)}):Play()
@@ -601,7 +602,34 @@ function thescript(owner, infector)
 					end
 				end
 			end
-
+			
+			tform.Pitch = (100 + math.random(0, 15))/100
+			tform:Play()
+			if face then face.Texture = "rbxassetid://1111587497" end
+			for _,v in pairs(char:GetDescendants()) do
+				if v:IsA("BasePart") and not v.Parent:IsA("Accessory") then
+					table.insert(origParts, v)
+					table.insert(origColors, v.Color)
+					table.insert(origMats, v.Material)
+					table.insert(origTrans, v.Transparency)
+					if (v.Name == "Torso" or v.Name == "UpperTorso" or v.Name == "LowerTorso") and not character:FindFirstChildWhichIsA("Shirt") and not character:FindFirstChildWhichIsA("Pants") then
+					elseif (v.Name == "LeftUpperLeg" or v.Name == "LeftLowerLeg" or v.Name == "RightUpperLeg" or v.Name == "RightLowerLeg" or v.Name == "Right Leg" or v.Name == "Left Leg") and not character:FindFirstChild("Pants") then
+					else
+						v.Color = Color3.fromRGB(255, 255, 255)
+					end
+				elseif v:IsA("BasePart") and v.Parent:IsA("Accessory") then
+					table.insert(origParts, v)
+					table.insert(origColors, v.Color)
+					table.insert(origMats, v.Material)
+					table.insert(origTrans, v.Transparency)
+				elseif v:IsA("Decal") then
+					table.insert(origParts, v)
+					table.insert(origColors, v.Color3)
+					table.insert(origMats, 0)
+					table.insert(origTrans, v.Transparency)
+				end
+			end
+			
 			task.delay(stun, function()
 				local speed = 0.2
 				tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.2, 0) * CFrame.Angles(math.rad(-97.517), 0, 0)}):Play()
@@ -5303,12 +5331,12 @@ function createMask()
 		if not handle:IsDescendantOf(tool) then tool:Destroy() end
 	end)
 	while tool.Parent do
-		if not tool.Parent or not tool.Parent:IsDescendantOf(game) then createMask() break end
+		if not tool.Parent or not tool.Parent:IsDescendantOf(game) then wait(math.random(0, 500)/100) createMask() break end
 		if tool.Parent == script and handle.Velocity.Magnitude <= 1 then
 			maskpos = handle.CFrame
 			wait(2)
 		end
-		if not tool.Parent or not tool.Parent:IsDescendantOf(game) then createMask() break end
+		if not tool.Parent or not tool.Parent:IsDescendantOf(game) then wait(math.random(0, 500)/100) createMask() break end
 		wait(0.1)
 	end
 end
