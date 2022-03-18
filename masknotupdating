@@ -3568,7 +3568,7 @@ animate()]], script)
 			ouchie.SoundId = "rbxassetid://175505949"
 			ouchie.Volume = 1
 			ouchie:Play()
-			ragdoll(character)
+			ragdoll(char)
 			wait(7)
 			if not isNPC and char == owner.Character then
 				owner:LoadCharacter()
