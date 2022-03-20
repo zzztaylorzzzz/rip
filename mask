@@ -772,6 +772,8 @@ local aTan = math.atan
 
 warn("Added")
 
+--wait(10) -- let player die
+
 local Plr = game:GetService("Players").LocalPlayer
 local gui = Plr:WaitForChild("PlayerGui")
 local Mouse = Plr:GetMouse()
@@ -1888,6 +1890,7 @@ local function grab()
 	end)
 	follow = coroutine.wrap(function()
 		while victim do
+			if victim == Body then victim = nil break end
 			runServ.Heartbeat:Wait()
 			part.Parent.PrimaryPart.Velocity = Core.Velocity
 			if not biting then
@@ -1931,7 +1934,7 @@ input.InputBegan:Connect(function(obj, gameProcessed)
 			grabCD = true
 			remote:FireServer("swing")
 			grab()
-			wait(0.36)
+			wait(0.35)
 			grabCD = false
 		elseif victim and not biting then
 			sprinting = false
@@ -4465,6 +4468,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			elseif action == "hit" then
 				for _,v in pairs(workspace:GetDescendants()) do if v.Name == target and v:FindFirstChildWhichIsA("Humanoid") and v:FindFirstChild("uniquegrabid") and v.uniquegrabid.Value == value then target = v end end
 				victim = target
+				if not victim then return end
 				victim.Archivable = true
 				targPlr = players:GetPlayerFromCharacter(target)
 				victimDisplay = victim.Humanoid.DisplayDistanceType
