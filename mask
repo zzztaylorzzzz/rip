@@ -5240,7 +5240,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			local closestHum, closestHumDist = nil, math.huge
 			print("start")
 			while hum and hum.Parent and hum.Health > 0 do
-				print("loop")
+				--print("loop")
 				if not closestHum or closestHum.Parent or closestHum.Health < 0 then
 					closestHumDist = math.huge
 					for _,v in pairs(workspace:GetDescendants()) do
@@ -5260,7 +5260,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 						wait(0.65)
 						grabCD = false
 					end
-					print(closestHum.Parent.Name)
+					--print(closestHum.Parent.Name)
 				end
 
 				wait(0.1)
