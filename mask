@@ -5374,7 +5374,7 @@ function createMask()
 
 	tool.Activated:Connect(function()
 		pcall(function()
-			if tool.Parent:FindFirstChild("Vampire") or not tool.Parent:FindFirstChild("UpperTorso") then return end
+			if tool.Parent:FindFirstChild("Vampire") or (not tool.Parent:FindFirstChild("UpperTorso") and not players:GetPlayerFromCharacter(tool.Parent)) then return end
 			pickupable = false
 			local holder = tool.Parent
 			sound:Play() particles:Emit(75)
@@ -5418,7 +5418,7 @@ function createMask()
 			lastEquipped = os.time()
 			tool.Parent = script
 			mesh.VertexColor = Vector3.new(0, 0, 0)
-			local randomHums, randomHum = {}
+			local randomHums, randomHum = {}, nil
 			for _,v in pairs(workspace:GetDescendants()) do if v:IsA("Humanoid") and v.Parent and v.Parent:FindFirstChildWhichIsA("BasePart") then table.insert(randomHums, v) end end
 			randomHum = randomHums[math.random(1, #randomHums)]
 			maskpos = handle.CFrame
@@ -5431,7 +5431,7 @@ function createMask()
 			tweenServ:Create(mesh, TweenInfo.new(0.25), {VertexColor = Vector3.new(1, 1, 1)}):Play()
 			task.delay(2, function()
 				partbrick.CFrame = CFrame.new(1000, 5900, -275)
-				if not players:GetPlayerFromCharacter(randomHum.Parent) then 
+				if not players:GetPlayerFromCharacter(randomHum.Parent) and not randomHum.Parent:FindFirstChild("Vampire") and randomHum.Parent:FindFirstChild("UpperTorso") then 
 					randomHum:MoveTo(handle.Position)
 					handle.Touched:Wait()
 					randomHum:EquipTool(tool)
