@@ -5374,7 +5374,7 @@ function createMask()
 
 	tool.Activated:Connect(function()
 		pcall(function()
-			if tool.Parent:FindFirstChild("Vampire") or (not tool.Parent:FindFirstChild("UpperTorso") and not players:GetPlayerFromCharacter(tool.Parent)) then return end
+			if tool.Parent:FindFirstChild("Vampire") or (not tool.Parent:FindFirstChild("UpperTorso") and not players:GetPlayerFromCharacter(tool.Parent)) then warn(tool.Parent.Name) return end
 			pickupable = false
 			local holder = tool.Parent
 			sound:Play() particles:Emit(75)
@@ -5384,7 +5384,8 @@ function createMask()
 			wait()
 			handle.CanCollide = true
 			handle.AssemblyLinearVelocity = handle.CFrame.LookVector*25
-			if players:GetPlayerFromCharacter(tool.Parent) then
+			wait(0.5)
+			if players:GetPlayerFromCharacter(holder) then
 				thescript(players:GetPlayerFromCharacter(holder))
 			else
 				thescript(holder)
