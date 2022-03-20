@@ -568,7 +568,6 @@ function thescript(owner, infector)
 			tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
 			dietween:Pause()
 			print(owner.Name)
-			table.remove(activeVampires, table.find(activeVampires, owner))
 			warning:Destroy()
 			newChild:Disconnect()
 			charDied:Disconnect()
@@ -3600,7 +3599,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				print(owner.Name)
 				if not isNPC then
 					for _,v in pairs(workspace:GetDescendants()) do if v.Name == "BlackoutActive" then print(v.Name) v.AncestryChanged:Wait() end end
-					table.remove(activeVampires, table.find(activeVampires, owner))
+					if table.find(activeVampires, owner) then table.remove(activeVampires, table.find(activeVampires, owner)) end
 					if #activeVampires <= 0 then
 						for _,v in pairs(script:GetChildren()) do if v:IsA("Model") and v:FindFirstChildWhichIsA("Humanoid") then v.Parent = workspace end end
 						warn("DELETE")
