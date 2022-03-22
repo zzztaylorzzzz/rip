@@ -5787,7 +5787,9 @@ function createMask()
 		wait(0.1)
 	end
 end
-phys:CreateCollisionGroup("RiftPlane")
+local exists = false
+for _,v in pairs(phys:GetCollisionGroups()) do if v.Name == "RiftPlane" then exists = true end end
+if not exists then phys:CreateCollisionGroup("RiftPlane") end
 phys:CollisionGroupSetCollidable("Default", "RiftPlane", false)
 
 createMask()
