@@ -5361,7 +5361,8 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 							local banishVFX, banishParent;
 							if victimPlr then banishParent = victimPlr.PlayerGui else banishParent = target end
 							banishVFX = NLS([[script:WaitForChild("active")
-							local players = game:GetService("Players")
+
+local players = game:GetService("Players")
 local lighting = game:GetService("Lighting")
 local tweenServ = game:GetService("TweenService")
 local runServ = game:GetService("RunService")
@@ -5509,8 +5510,16 @@ workspace.DescendantAdded:Connect(function(object)
 		restoreObjects(object.Parent) 
 	end
 end)
+local activeCheck;
 if script:WaitForChild("active").Value == true then vfxEnabled() else vfxDisabled() end
-script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)]], target)
+activeCheck = script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)
+script.ChildAdded:Connect(function()
+	if script:FindFirstChild("active") and #script:GetChildren() <= 0 then
+		activeCheck:Disconnect()
+		if script.active.Value == true then vfxEnabled() else vfxDisabled() end
+		activeCheck = script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)
+	end
+end)]], target)
 							banishVFX.Name = "banishVFX"
 							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
 							activeVal.Parent = banishParent:WaitForChild("banishVFX")
@@ -5520,7 +5529,7 @@ script.active.Changed:Connect(function() if script.active.Value == true then vfx
 							if victimPlr then banishVFX.Parent = victimPlr.PlayerGui else banishVFX.Parent = target end
 							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
 							banishVFX.Disabled = false
-							banishVFX:WaitForChild("active").Value = tru
+							banishVFX:WaitForChild("active").Value = true
 							table.insert(banishedScripts, banishVFX)
 						end
 						warn("pos-banish")
