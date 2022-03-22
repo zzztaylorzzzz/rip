@@ -5506,7 +5506,7 @@ workspace.DescendantAdded:Connect(function(object)
 	end
 end)
 if script:WaitForChild("active").Value == true then vfxEnabled() else vfxDisabled() end
-script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)]], banishParent)
+script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)]], target)
 							banishVFX.Name = "banishVFX"
 							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
 							table.insert(banishedScripts, banishVFX)
