@@ -5522,7 +5522,7 @@ script.ChildAdded:Connect(function()
 end)]], target)
 							banishVFX.Name = "banishVFX"
 							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
-							activeVal.Parent = banishParent:WaitForChild("banishVFX")
+							activeVal.Parent = banishVFX
 							table.insert(banishedScripts, banishVFX)
 						elseif not targPlr then
 							local banishVFX = Instance.new("LocalScript")
