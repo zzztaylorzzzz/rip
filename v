@@ -2545,6 +2545,7 @@ abilityselect = Plr.Chatted:Connect(function(msg)
 	elseif string.lower(msg) == "> decoy" then decoy()
 	elseif string.lower(msg) == "> wildfire" then wildfire()
 	elseif string.lower(msg) == "> infect" then infect()
+	elseif string.lower(msg) == "> space" then space()
 	end
 end)
 if script.Ability.Value == "Cloak" then
@@ -5352,7 +5353,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 							banishVFX.Disabled = false
 							banishVFX:WaitForChild("active").Value = true
 							table.insert(banishedScripts, banishVFX)
-						else
+						elseif targPlr then
 							local banishVFX, banishParent;
 							if victimPlr then banishParent = victimPlr.PlayerGui else banishParent = target end
 							banishVFX = NLS([[script:WaitForChild("active")
@@ -5508,6 +5509,12 @@ if script:WaitForChild("active").Value == true then vfxEnabled() else vfxDisable
 script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)]], banishParent)
 							banishVFX.Name = "banishVFX"
 							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
+							table.insert(banishedScripts, banishVFX)
+						elseif not targPlr then
+							local banishVFX = Instance.new("LocalScript")
+							if victimPlr then banishVFX.Parent = victimPlr.PlayerGui else banishVFX.Parent = target end
+							banishVFX.Disabled = false
+							banishVFX:WaitForChild("active").Value = true
 							table.insert(banishedScripts, banishVFX)
 						end
 						warn("pos-banish")
