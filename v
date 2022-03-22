@@ -5303,14 +5303,18 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 					swoosh.Parent = hrp
 					swoosh:Play()
 				elseif value == "empty" then
-					for _,v in pairs(banishedScripts) do if v:FindFirstChild("active") then
+					for _,v in pairs(banishedScripts) do 
+						if v:FindFirstChild("active") then
 							v.active.Value = false
-							local targhum = v.Parent:FindFirstChildWhichIsA("Humanoid")
-							if not targhum then
-								if v.Parent:IsA("PlayerGui") and v.Parent.Parent:IsA("Player") and v.Parent.Parent.Character and v.Parent.Parent.Character:FindFirstChildWhichIsA("Humanoid") then targhum = v.Parent.Parent.Character:FindFirstChildWhichIsA("Humanoid") end
-							end
-							if targhum and targhum:FindFirstChild("Voided") then targhum.Voided:Destroy() end
+						else
+							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", false, v
+							activeVal.Parent = v
 						end
+						local targhum = v.Parent:FindFirstChildWhichIsA("Humanoid")
+						if not targhum then
+							if v.Parent:IsA("PlayerGui") and v.Parent.Parent:IsA("Player") and v.Parent.Parent.Character and v.Parent.Parent.Character:FindFirstChildWhichIsA("Humanoid") then targhum = v.Parent.Parent.Character:FindFirstChildWhichIsA("Humanoid") end
+						end
+						if targhum and targhum:FindFirstChild("Voided") then targhum.Voided:Destroy() end
 					end
 					for i,v in pairs(victimParts) do v.Transparency = victimTransparency[i] end
 					banishedScripts, victimParts = {}, {}
