@@ -5353,7 +5353,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 							banishVFX.Disabled = false
 							banishVFX:WaitForChild("active").Value = true
 							table.insert(banishedScripts, banishVFX)
-						elseif targPlr then
+						elseif players:GetPlayerFromCharacter(target) then
 							local banishVFX, banishParent;
 							if victimPlr then banishParent = victimPlr.PlayerGui else banishParent = target end
 							banishVFX = NLS([[script:WaitForChild("active")
