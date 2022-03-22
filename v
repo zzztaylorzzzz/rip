@@ -5344,6 +5344,10 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 						warn("pre-banish")
 						if target:FindFirstChild("banishVFX") then
 							print("making active")
+							if not target.banishVFX:FindFirstChild("active") then
+								local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
+								activeVal.Parent = target:WaitForChild("banishVFX")
+							end
 							target.banishVFX.active = true
 							table.insert(banishedScripts, target.banishVFX)
 						elseif script:FindFirstChild("banishVFX") then
@@ -5509,12 +5513,14 @@ if script:WaitForChild("active").Value == true then vfxEnabled() else vfxDisable
 script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)]], target)
 							banishVFX.Name = "banishVFX"
 							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
+							activeVal.Parent = banishParent:WaitForChild("banishVFX")
 							table.insert(banishedScripts, banishVFX)
 						elseif not targPlr then
 							local banishVFX = Instance.new("LocalScript")
 							if victimPlr then banishVFX.Parent = victimPlr.PlayerGui else banishVFX.Parent = target end
+							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
 							banishVFX.Disabled = false
-							banishVFX:WaitForChild("active").Value = true
+							banishVFX:WaitForChild("active").Value = tru
 							table.insert(banishedScripts, banishVFX)
 						end
 						warn("pos-banish")
