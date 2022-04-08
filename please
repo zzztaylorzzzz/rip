@@ -3367,7 +3367,341 @@ animate = coroutine.wrap(function()
 
 
 end)
-animate()]], owner.Character)
+animate()]], script)
+		end
+		primaryScript.Disabled = true
+		local abilityInd = script.Ability:Clone()
+		if infector then abilityInd.Value = script.Ability.Value primaryScript.Name = "minion" end
+		abilityInd.Parent = primaryScript
+		wait()
+		primaryScript.Parent = char
+		primaryScript.Disabled = false
+		remoteValue.Parent = primaryScript
+		local ambienttracker = Instance.new("Color3Value")
+		local odambienttracker = Instance.new("Color3Value")
+		ambienttracker.Name, ambienttracker.Value, ambienttracker.Parent = "AmbientTracker", lighting.Ambient, primaryScript
+		odambienttracker.Name, odambienttracker.Value, odambienttracker.Parent = "ODAmbientTracker", lighting.OutdoorAmbient, primaryScript
+		lighting.Changed:Connect(function()
+			ambienttracker.Value = lighting.Ambient
+			odambienttracker.Value = lighting.OutdoorAmbient
+		end)
+
+		warn("Made it past the script stuff..")
+		local RagdollJoints
+		local function ragjoints()
+			RagdollJoints = Instance.new("Folder")
+			RagdollJoints.Name = "RagdollJoints"
+
+			local LeftHip = Instance.new("BallSocketConstraint")
+			LeftHip.Name = "LeftHip"
+			LeftHip.Enabled = false
+			LeftHip.TwistLowerAngle = -3
+			LeftHip.UpperAngle = 40
+			LeftHip.TwistUpperAngle = 3
+			LeftHip.LimitsEnabled = true
+			LeftHip.TwistLimitsEnabled = true
+			LeftHip.Parent = RagdollJoints
+
+			local RightAnkle = Instance.new("HingeConstraint")
+			RightAnkle.Name = "RightAnkle"
+			RightAnkle.Enabled = false
+			RightAnkle.LowerAngle = 5
+			RightAnkle.UpperAngle = 5
+			RightAnkle.LimitsEnabled = true
+			RightAnkle.Parent = RagdollJoints
+
+			local RightElbow = Instance.new("HingeConstraint")
+			RightElbow.Name = "RightElbow"
+			RightElbow.Enabled = false
+			RightElbow.LowerAngle = 0
+			RightElbow.UpperAngle = 135
+			RightElbow.LimitsEnabled = true
+			RightElbow.Parent = RagdollJoints
+
+			local LeftKnee = Instance.new("HingeConstraint")
+			LeftKnee.Name = "LeftKnee"
+			LeftKnee.Enabled = false
+			LeftKnee.LowerAngle = -135
+			LeftKnee.UpperAngle = -10
+			LeftKnee.LimitsEnabled = true
+			LeftKnee.Parent = RagdollJoints
+
+			local Neck = Instance.new("BallSocketConstraint")
+			Neck.Name = "Neck"
+			Neck.Enabled = false
+			Neck.UpperAngle = 0
+			Neck.LimitsEnabled = true
+			Neck.TwistLimitsEnabled = true
+			Neck.Parent = RagdollJoints
+
+			local LeftAnkle = Instance.new("HingeConstraint")
+			LeftAnkle.Name = "LeftAnkle"
+			LeftAnkle.Enabled = false
+			LeftAnkle.LowerAngle = 5
+			LeftAnkle.UpperAngle = 5
+			LeftAnkle.LimitsEnabled = true
+			LeftAnkle.Parent = RagdollJoints
+
+			local LeftElbow = Instance.new("HingeConstraint")
+			LeftElbow.Name = "LeftElbow"
+			LeftElbow.Enabled = false
+			LeftElbow.LowerAngle = 0
+			LeftElbow.UpperAngle = 135
+			LeftElbow.LimitsEnabled = true
+			LeftElbow.Parent = RagdollJoints
+
+			local RightShoulder = Instance.new("BallSocketConstraint")
+			RightShoulder.Name = "RightShoulder"
+			RightShoulder.Enabled = false
+			RightShoulder.TwistLowerAngle = -30
+			RightShoulder.UpperAngle = 30
+			RightShoulder.TwistUpperAngle = 30
+			RightShoulder.LimitsEnabled = true
+			RightShoulder.TwistLimitsEnabled = true
+			RightShoulder.Parent = RagdollJoints
+
+			local LeftShoulder = Instance.new("BallSocketConstraint")
+			LeftShoulder.Name = "LeftShoulder"
+			LeftShoulder.Enabled = false
+			LeftShoulder.TwistLowerAngle = -30
+			LeftShoulder.UpperAngle = 30
+			LeftShoulder.TwistUpperAngle = 30
+			LeftShoulder.LimitsEnabled = true
+			LeftShoulder.TwistLimitsEnabled = true
+			LeftShoulder.Parent = RagdollJoints
+
+			local LeftWrist = Instance.new("HingeConstraint")
+			LeftWrist.Name = "LeftWrist"
+			LeftWrist.Enabled = false
+			LeftWrist.LowerAngle = 5
+			LeftWrist.UpperAngle = 5
+			LeftWrist.LimitsEnabled = true
+			LeftWrist.Parent = RagdollJoints
+
+			local Waist = Instance.new("BallSocketConstraint")
+			Waist.Name = "Waist"
+			Waist.Enabled = false
+			Waist.TwistLowerAngle = -1
+			Waist.UpperAngle = 15
+			Waist.TwistUpperAngle = 1
+			Waist.LimitsEnabled = true
+			Waist.TwistLimitsEnabled = true
+			Waist.Parent = RagdollJoints
+
+			local RightWrist = Instance.new("HingeConstraint")
+			RightWrist.Name = "RightWrist"
+			RightWrist.Enabled = false
+			RightWrist.LowerAngle = 5
+			RightWrist.UpperAngle = 5
+			RightWrist.LimitsEnabled = true
+			RightWrist.Parent = RagdollJoints
+
+			local RightKnee = Instance.new("HingeConstraint")
+			RightKnee.Name = "RightKnee"
+			RightKnee.Enabled = false
+			RightKnee.LowerAngle = -135
+			RightKnee.UpperAngle = -10
+			RightKnee.LimitsEnabled = true
+			RightKnee.Parent = RagdollJoints
+
+			local RightHip = Instance.new("BallSocketConstraint")
+			RightHip.Name = "RightHip"
+			RightHip.Enabled = false
+			RightHip.TwistLowerAngle = -3
+			RightHip.UpperAngle = 40
+			RightHip.TwistUpperAngle = 3
+			RightHip.LimitsEnabled = true
+			RightHip.TwistLimitsEnabled = true
+			RightHip.Parent = RagdollJoints
+
+			local RightShoulder1 = Instance.new("BallSocketConstraint")
+			RightShoulder1.Name = "Right Shoulder"
+			RightShoulder1.Enabled = false
+			RightShoulder1.TwistLowerAngle = -180
+			RightShoulder1.TwistUpperAngle = 90
+			RightShoulder1.LimitsEnabled = true
+			RightShoulder1.TwistLimitsEnabled = true
+			RightShoulder1.Parent = RagdollJoints
+
+			local LeftShoulder1 = Instance.new("BallSocketConstraint")
+			LeftShoulder1.Name = "Left Shoulder"
+			LeftShoulder1.Enabled = false
+			LeftShoulder1.TwistLowerAngle = -180
+			LeftShoulder1.TwistUpperAngle = 90
+			LeftShoulder1.LimitsEnabled = true
+			LeftShoulder1.TwistLimitsEnabled = true
+			LeftShoulder1.Parent = RagdollJoints
+
+			local RightHip1 = Instance.new("BallSocketConstraint")
+			RightHip1.Name = "Right Hip"
+			RightHip1.Enabled = false
+			RightHip1.LimitsEnabled = true
+			RightHip1.TwistLimitsEnabled = true
+			RightHip1.Parent = RagdollJoints
+
+			local LeftHip1 = Instance.new("BallSocketConstraint")
+			LeftHip1.Name = "Left Hip"
+			LeftHip1.Enabled = false
+			LeftHip1.LimitsEnabled = true
+			LeftHip1.TwistLimitsEnabled = true
+			LeftHip1.Parent = RagdollJoints
+
+			RagdollJoints.Parent = script
+		end
+		ragjoints()
+
+		local function ragdoll(chara, offset, anchorTime, velocity, velocityPart)
+			local playerremoving, chararemoving;
+			local newchar = Instance.new("Model")
+			if chara.PrimaryPart then chara.PrimaryPart.Anchored = true end
+			if not anchorTime then anchorTime = 0 end
+			if offset then chara.PrimaryPart.CFrame = chara.PrimaryPart.CFrame * offset end
+			if chara:FindFirstChild("Humanoid") then chara.Humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
+
+			--if chara == char then
+			--	--ltorsomotor.C0 = ltorsoOrig
+			--	--torsomotor.C0 = torsoOrig
+			--	--larmmotor.C0 = larmOrig
+			--	--llarmmotor.C0 = llarmOrig
+			--	--lhandmotor.C0 = lhandOrig
+			--	--rarmmotor.C0 = rarmOrig
+			--	--rlarmmotor.C0 = rlarmOrig
+			--	--rhandmotor.C0 = rhandOrig
+			--	--headmotor.C0 = headOrig
+			--	--rlegmotor.C0 = rlegOrig
+			--	--rllegmotor.C0 = rllegOrig
+			--	--rfootmotor.C0 = rfootOrig
+			--	--llegmotor.C0 = llegOrig
+			--	--lllegmotor.C0 = lllegOrig
+			--	--lfootmotor.C0 = lfootOrig
+			--	rarm.Name, rlarm.Name, rhand.Name = rarmName, rlarmName, rhandName
+			--	larm.Name, llarm.Name, lhand.Name = larmName, llarmName, lhandName
+			--	rleg.Name, rlleg.Name, rfoot.Name = rlegName, rllegName, rfootName
+			--	lleg.Name, llleg.Name, lfoot.Name = llegName, lllegName, lfootName
+			--end
+
+			if chara:FindFirstChild("UpperTorso") then
+				for _,v in pairs(chara:GetDescendants()) do
+					if v:IsA("BasePart") then v.Massless = true end
+					if v:IsA("Motor6D") then
+						if v.Name ~= "Root" and v.Name ~= "RootJoint" then
+							local att0 = Instance.new("Attachment")
+							att0.Name = "RagdollSocket"
+							att0.CFrame = v.C0
+							att0.Parent = v.Part0
+							local att1 = Instance.new("Attachment")
+							att1.Name = "RagdollSocket"
+							att1.CFrame = v.C1
+							att1.Parent = v.Part1
+
+							local socket = script.RagdollJoints:FindFirstChild(v.Name):Clone()
+							socket.Parent = v.Parent
+							socket.Attachment0 = att0
+							socket.Attachment1 = att1
+							socket.Enabled = true
+
+							v:Destroy()
+						end
+					end
+				end
+				for _,v in pairs(chara:GetDescendants()) do if v:IsA("Attachment") and v.Name ~= "RagdollSocket" then v:Destroy() end end
+			elseif chara:FindFirstChild("Torso") then
+				for index,joint in pairs(chara:GetDescendants()) do
+					if joint:IsA("BasePart") then joint.Massless = true end
+					if joint:IsA("Motor6D") then
+						local socket = Instance.new("BallSocketConstraint")
+						local a1 = Instance.new("Attachment")
+						local a2 = Instance.new("Attachment")
+						a1.Parent = joint.Part0
+						a2.Parent = joint.Part1
+						socket.Parent = joint.Parent
+						socket.Attachment0 = a1
+						socket.Attachment1 = a2
+						a1.CFrame = joint.C0
+						a2.CFrame = joint.C1
+						socket.LimitsEnabled = true
+						socket.TwistLimitsEnabled = true
+						joint:Destroy()
+					end
+				end
+			end
+			local chararootpart = chara:FindFirstChild("HumanoidRootPart")
+			if chararootpart then
+				chararootpart.CanCollide = false
+				chararootpart.Massless = true
+			end
+
+			local tempclone = chara:Clone()
+			if chara:FindFirstChild("playerID") and not players:GetPlayerFromCharacter(chara) then
+				chararemoving = chara.AncestryChanged:Connect(function()
+					if not chara:IsDescendantOf(game) then
+						tempclone.Parent = script
+						tempclone.Humanoid.Health = 1
+						for _,v in pairs(tempclone:GetDescendants()) do
+							if v:IsA("BasePart") then
+								v.Anchored = false
+								if v.Name ~= "HumanoidRootPart" then v.CanCollide = true end
+							end
+						end
+						tempclone.Humanoid.Health = 0
+						chararemoving:Disconnect()
+					end
+				end)
+			elseif players:GetPlayerFromCharacter(chara) then
+				local pid = Instance.new("IntValue", newchar)
+				pid.Name = "playerID"
+				pid.Value = players:GetPlayerFromCharacter(chara).UserId
+				playerremoving = players:GetPlayerFromCharacter(chara).CharacterRemoving:Connect(function()
+					playerremoving:Disconnect()
+					newchar.Name = chara.Name
+					newchar.Parent = script
+					for _,v in pairs(chara:GetChildren()) do v.Parent = newchar end
+				end)
+			end
+			task.delay(anchorTime, function()
+				for _,v in pairs(chara:GetDescendants()) do if v:IsA("BasePart") then v.Anchored = false end end
+				if velocity and velocityPart then
+					--print(velocity)
+					wait(0.1)
+					velocityPart.AssemblyLinearVelocity = velocity
+				end
+			end)
+		end
+
+		hum.Died:Connect(function() 
+			local ouchie = Instance.new("Sound")
+			ouchie.Parent = char.Head
+			ouchie.SoundId = "rbxassetid://175505949"
+			ouchie.Volume = 1
+			ouchie:Play()
+			ragdoll(char)
+			wait(7)
+			if not isNPC and char == owner.Character then
+				owner:LoadCharacter()
+			end
+		end)
+		if not isNPC then
+			local ownerDied
+			ownerDied = owner.CharacterRemoving:Connect(function()
+				ownerDied:Disconnect()
+				owner.CharacterAdded:Wait()
+				wait()
+				if script:FindFirstChild("fixScript") then 
+					script.fixScript:Clone().Parent = owner.Character owner.Character:WaitForChild("fixScript").Disabled = false
+				else
+					NLS([[
+if not owner then owner = game:GetService("Players").LocalPlayer end
+print("Fixing")
+owner.CameraMode = Enum.CameraMode.Classic
+game:GetService("UserInputService").MouseIconEnabled = true
+owner.Character.Humanoid.CameraOffset = Vector3.new(0, 0, 0)
+workspace.CurrentCamera.FieldOfView = 70
+workspace.CurrentCamera.CameraType = Enum.CameraType.Custom 
+workspace.CurrentCamera.CameraSubject = owner.Character.Humanoid
+for _, v in pairs(game:GetService("Lighting"):GetChildren()) do if v.Name == "zenvetierem" then v:Destroy() end end
+for _,v in pairs(workspace:GetChildren()) do if v.Name == "zenvetierem" then v:Destroy() end end
+for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or v.Name == "CircleProgressGui" or v.Name == "VH3AbilityUI" then v:Destroy() end end
+]], owner.Character)
 				end
 				print(owner.Name)
 				if not isNPC then
