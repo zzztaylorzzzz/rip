@@ -1,4 +1,4 @@
-if not owner then
+if not owner and game:GetService("Players"):FindFirstChild(script.Parent.Name) then
 	owner = game:GetService("Players"):FindFirstChild(script.Parent.Name)
 	studio = true
 	print("Preparing script")
@@ -6,35 +6,66 @@ if not owner then
 	print("Running")
 end
 
-if script:FindFirstChild("Holder") then script.Parent = script.Holder.Value else script.Parent = workspace end
 
-if not script:FindFirstChild("Ability") then
-	local ability = Instance.new("StringValue")
-	ability.Name = "Ability"
-	ability.Parent = script
-	local random = math.random(1, 5)
-	if random == 1 then
-		ability.Value = "Cloak"
-	elseif random == 2 then
-		ability.Value = "Decoy"
-	elseif random == 3 then
-		ability.Value = "Wildfire"
-	elseif random == 4 then
-		ability.Value = "Blackout"
-	elseif random == 5 then
-		ability.Value = "Infect"
-	end
+local tool, handle, mesh, particles, use, whispers;
+local tweenServ = game:GetService("TweenService")
+local runServ = game:GetService("RunService")
+local debris = game:GetService("Debris")
+local phys = game:GetService("PhysicsService")
+local players = game:GetService("Players")
+
+local function assignID(human)
+	local stringer = Instance.new("StringValue")
+	stringer.Value, stringer.Name, stringer.Parent = tostring(math.random(1000000, 9999999)), "uniquegrabid", human.Parent
+	local removal;
+	removal = stringer.AncestryChanged:Connect(function() if not stringer.Parent and human then removal:Disconnect() assignID(human) end end)
 end
 
+for _,v in pairs(workspace:GetDescendants()) do
+	v.Archivable = true
+	if v:IsA("Humanoid") and not v.Parent:FindFirstChild("uniquegrabid") then
+		assignID(v)
+	end
+end
+workspace.DescendantAdded:Connect(function(v) pcall(function() v.Parent.Archivable = true v.Archivable = true if v:IsA("Humanoid") then assignID(v) end end) end)
+
+
 local origOwner = owner
-local activeVampires = {}
+local activeVampires = {"anti destroy", "stop it"}
 local thescript;
 function thescript(owner, infector)
 	local entirescript = coroutine.wrap(function()
-		table.insert(activeVampires, owner.Name)
+		local ability = Instance.new("StringValue")
+		ability.Name = "Ability"
+		ability.Parent = script
+		local random = math.random(1, 5)
+		if random == 1 then
+			ability.Value = "Cloak"
+		elseif random == 2 then
+			ability.Value = "Decoy"
+		elseif random == 3 then
+			ability.Value = "Wildfire"
+		elseif random == 4 then
+			ability.Value = "Blackout"
+		elseif random == 5 then
+			ability.Value = "Infect"
+		end
+
+		local survived = false
+		local isNPC = false
+		if owner:IsA("Player") then
+			table.insert(activeVampires, owner)
+		else
+			isNPC = true
+		end
 		local studio = false
 		local r15 = false
-		local char = owner.Character
+		local char;
+		if isNPC then
+			char = owner
+		else
+			char = owner.Character
+		end
 		script.Name = "vampire"
 
 		local players = game:GetService("Players")
@@ -48,11 +79,14 @@ function thescript(owner, infector)
 		if upperTorso then r15 = true end
 
 		local waiting = false
-		
-		local dietween;
+
+		local dietween, newchar;
 		if not r15 then
-			--local newchar = players:CreateHumanoidModelFromDescription(players:GetHumanoidDescriptionFromUserId(69180633), Enum.HumanoidRigType.R15)
-			local newchar = players:CreateHumanoidModelFromDescription(players:GetHumanoidDescriptionFromUserId(owner.UserId), Enum.HumanoidRigType.R15)
+			if not owner or not owner.UserId then
+				newchar = players:CreateHumanoidModelFromDescription(players:GetHumanoidDescriptionFromUserId(69180633), Enum.HumanoidRigType.R15)
+			else
+				newchar = players:CreateHumanoidModelFromDescription(players:GetHumanoidDescriptionFromUserId(owner.UserId), Enum.HumanoidRigType.R15)
+			end
 			local desc = newchar:WaitForChild("Humanoid"):WaitForChild("HumanoidDescription")
 			desc.BodyTypeScale, desc.DepthScale, desc.HeadScale, desc.HeightScale, desc.ProportionScale, desc.WidthScale = 0, 1, 1, 1, 1, 1
 			--newchar.Name = owner.Name
@@ -60,8 +94,10 @@ function thescript(owner, infector)
 			newchar.Humanoid:ApplyDescription(desc)
 			newchar.Humanoid.DisplayName = owner.Name
 			newchar.PrimaryPart.CFrame = char.PrimaryPart.CFrame
-			owner.Character = newchar
-			char:Destroy()
+			if not isNPC then
+				owner.Character = newchar
+				char:Destroy()
+			end
 			char = newchar
 			char.PrimaryPart = char:FindFirstChild("HumanoidRootPart")
 			local newhum = char:WaitForChild("Humanoid")
@@ -138,7 +174,7 @@ function thescript(owner, infector)
 		local vampire = false
 		local origParts, origColors, origMats, origTrans = {}, {}, {}, {}
 		local rPos, lPos = 0, 0
-		local face = owner.Character.Head:FindFirstChild("face")
+		local face = char.Head:FindFirstChild("face")
 		local origFace;
 		if face then origFace = face.Texture end
 
@@ -149,6 +185,52 @@ function thescript(owner, infector)
 		tform.Name = "Transform"
 
 		local character = char
+
+		local function crouch(speed)
+			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -0.9, 0)}):Play()
+			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(-44.977), 0, 0)}):Play()
+			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(21.715), math.rad(-37.185), math.rad(8.881))}):Play()
+			tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(45.034), math.rad(-30.825), math.rad(15.986))}):Play()
+			tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(32.086), math.rad(49.217), math.rad(-0.401))}):Play()
+			tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(41.711), math.rad(45.665), math.rad(-13.923))}):Play()
+			tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig * CFrame.Angles(math.rad(-1.891), math.rad(7.391), math.rad(13.063))}):Play()
+			tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(math.rad(44.977), 0, 0)}):Play()
+			tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(90.012), 0, 0)}):Play()
+			tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-82.506), 0, 0)}):Play()
+			tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(37.471), 0, 0)}):Play()
+			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-127.483), 0, 0)}):Play()
+			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig * CFrame.Angles(math.rad(-0.229), math.rad(-5.959), math.rad(-4.584))}):Play()
+		end
+
+		local function defaultPos(speed, char)
+			--print(speed)
+			if crouching then
+				crouch(speed)
+				return
+			end
+			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig}):Play()
+			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
+			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig}):Play()
+			tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig}):Play()
+			tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+			tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig}):Play()
+			tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig}):Play()
+			tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+			tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig}):Play()
+			tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig}):Play()
+			tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig}):Play()
+			tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
+			tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig}):Play()
+			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig}):Play()
+			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+			task.delay(speed, function()
+				rarm.Name, rlarm.Name, rhand.Name = rarmName, rlarmName, rhandName
+				larm.Name, llarm.Name, lhand.Name = larmName, llarmName, lhandName
+				rleg.Name, rlleg.Name, rfoot.Name = rlegName, rllegName, rfootName
+				lleg.Name, llleg.Name, lfoot.Name = llegName, lllegName, lfootName
+			end)
+		end
+
 
 		local function infectStart(char)
 			local speed = 0.067
@@ -301,7 +383,7 @@ function thescript(owner, infector)
 			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-105.023), 0, 0)}):Play()
 			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
 			wait(3)
-			playerRemote:FireClient(owner, "animFinished")
+			if not isNPC then playerRemote:FireClient(owner, "animFinished") end
 		end
 		local function infectRecover(char)
 			local speed = 0.15
@@ -409,7 +491,7 @@ function thescript(owner, infector)
 			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig}):Play()
 			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
 			wait(speed)
-			playerRemote:FireClient(owner, "gotUp")
+			if not isNPC then playerRemote:FireClient(owner, "gotUp") end
 			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig}):Play()
 			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(-19.996), 0, 0)}):Play()
 			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(8.995), 0, 0)}):Play()
@@ -444,22 +526,26 @@ function thescript(owner, infector)
 			wait(speed)
 			waiting = false
 		end
+		dietween = tweenServ:Create(hum, TweenInfo.new(1), {WalkSpeed = 0})
+		if isNPC then
+			dietween = tweenServ:Create(hum, TweenInfo.new(2), {Health = 0})
+		end
+		
+		dietween:Play()
+		hum.AutoRotate = false
 		hum.WalkSpeed = 0 hum.JumpPower = 0 infectStart()
 
 		character.Humanoid.BreakJointsOnDeath = false
-		character.Humanoid.Health = character.Humanoid.MaxHealth
-
-		hum.AutoRotate = false
+		character.Humanoid.Health = 100
 		local newChild, charDied;
 		waiting = true
 		print("time's ticking..")
-		dietween = tweenServ:Create(hum, TweenInfo.new(7), {Health = 0})
-		dietween:Play()
 		local warning = Instance.new("ProximityPrompt", char)
 		warning.RequiresLineOfSight, warning.MaxActivationDistance, warning.ClickablePrompt = false, 0.01, false
 		warning.ObjectText, warning.ActionText, warning.KeyboardKeyCode = "You are being infected!", "Accept the script request to avoid death", Enum.KeyCode.Minus
 		newChild = remote.OnServerEvent:Connect(function(player, msg)
 			if player == owner and msg == "infected" then
+				survived = true
 				warning:Destroy()
 				newChild:Disconnect()
 				charDied:Disconnect()
@@ -472,7 +558,7 @@ function thescript(owner, infector)
 				wait(0.1)
 				dietween:Pause()
 				infectFinish()
-				if owner ~= origOwner then
+				if infector then
 					character.Humanoid.MaxHealth = 85
 					character.Humanoid.Health = character.Humanoid.MaxHealth
 					print(infector.Name)
@@ -483,24 +569,204 @@ function thescript(owner, infector)
 				hum.AutoRotate = true
 			end
 		end)
-		charDied = hum.Died:Connect(function()
+		charDied = runServ.Heartbeat:Connect(function()
+			local closestHum, closestHumDist = nil, math.huge
+			if hum.Health > 1 then return end
+			local speed, stun = 0.25, 0
+			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.4, 0) * CFrame.Angles(math.rad(-90.012), 0, 0)}):Play()
+			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
+			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(157.449), math.rad(-75), math.rad(-0.057))}):Play()
+			tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig}):Play()
+			tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+			tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(92.475), math.rad(73.281), math.rad(64.973))}):Play()
+			tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(15.011), 0, 0)}):Play()
+			tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+			tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig}):Play()
+			tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(5.271), math.rad(-12.376), math.rad(-11.345))}):Play()
+			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-28.934), math.rad(-5.615), math.rad(3.209))}):Play()
+			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+			tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(12.777), math.rad(12.376), math.rad(11.345))}):Play()
+			tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-29.335), math.rad(3.896), math.rad(-1.891))}):Play()
+			tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
+			dietween:Pause()
 			print(owner.Name)
-			table.remove(activeVampires, table.find(activeVampires, owner.Name))
 			warning:Destroy()
 			newChild:Disconnect()
 			charDied:Disconnect()
 			print("died :(")
-			if #activeVampires <= 0 then warn("Self destruct") script:Destroy() end
+
+			hum.Health = 100
+			local newchar = Instance.new("Model")
+			newchar.Parent = script
+			for _,v in pairs(char:GetChildren()) do v.Parent = newchar end
+			newchar.PrimaryPart = char.PrimaryPart
+			newchar.Name = char.Name
+			char:Destroy()
+			char = newchar
+			if not isNPC then owner:LoadCharacter() end
+			wait(0.5)
+			hum.WalkSpeed, hum.JumpPower, hum.AutoRotate = 16, 70, true
+			hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+			hum.Health = 100
+			for _,v in pairs(newchar:GetDescendants()) do if v:IsA("BasePart") then v:SetNetworkOwner(nil) end end
+			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.4, 0) * CFrame.Angles(math.rad(-90.012), 0, 0)}):Play()
+			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
+			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(157.449), math.rad(-75), math.rad(-0.057))}):Play()
+			tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig}):Play()
+			tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+			tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(92.475), math.rad(73.281), math.rad(64.973))}):Play()
+			tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(15.011), 0, 0)}):Play()
+			tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+			tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig}):Play()
+			tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(5.271), math.rad(-12.376), math.rad(-11.345))}):Play()
+			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-28.934), math.rad(-5.615), math.rad(3.209))}):Play()
+			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+			tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(12.777), math.rad(12.376), math.rad(11.345))}):Play()
+			tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-29.335), math.rad(3.896), math.rad(-1.891))}):Play()
+			tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
+			waiting = true
+			while waiting do
+				--print(waiting)
+				wait(0.25)
+				for _,v in pairs(workspace:GetDescendants()) do
+					if v ~= hum and v:IsA("Humanoid") and v.Health > 0 and v.PlatformStand == false and v.Parent:FindFirstChildWhichIsA("BasePart") and not v.Parent:FindFirstChild("Vampire") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 15 then
+						print("close enough!")
+						waiting = false
+					end
+				end
+			end
+			vampire = true
+			tform.Pitch = (100 + math.random(0, 15))/100
+			tform:Play()
+			if face then face.Texture = "rbxassetid://1111587497" end
+			for _,v in pairs(char:GetDescendants()) do
+				if v:IsA("BasePart") and not v.Parent:IsA("Accessory") then
+					table.insert(origParts, v)
+					table.insert(origColors, v.Color)
+					table.insert(origMats, v.Material)
+					table.insert(origTrans, v.Transparency)
+					if (v.Name == "Torso" or v.Name == "UpperTorso" or v.Name == "LowerTorso") and not character:FindFirstChildWhichIsA("Shirt") and not character:FindFirstChildWhichIsA("Pants") then
+					elseif (v.Name == "LeftUpperLeg" or v.Name == "LeftLowerLeg" or v.Name == "RightUpperLeg" or v.Name == "RightLowerLeg" or v.Name == "Right Leg" or v.Name == "Left Leg") and not character:FindFirstChild("Pants") then
+					else
+						v.Color = Color3.fromRGB(255, 255, 255)
+					end
+				elseif v:IsA("BasePart") and v.Parent:IsA("Accessory") then
+					table.insert(origParts, v)
+					table.insert(origColors, v.Color)
+					table.insert(origMats, v.Material)
+					table.insert(origTrans, v.Transparency)
+				elseif v:IsA("Decal") then
+					table.insert(origParts, v)
+					table.insert(origColors, v.Color3)
+					table.insert(origMats, 0)
+					table.insert(origTrans, v.Transparency)
+				end
+			end
+
+			task.delay(stun, function()
+				local speed = 0.2
+				tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.2, 0) * CFrame.Angles(math.rad(-97.517), 0, 0)}):Play()
+				tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(7.506), 0, 0)}):Play()
+				tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(87.376), math.rad(-58.671), math.rad(-42.915))}):Play()
+				tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(1.375), math.rad(0.573), math.rad(0.516))}):Play()
+				tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+				tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(108.747), math.rad(21.601), math.rad(26.127))}):Play()
+				tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(12.834), math.rad(1.49), math.rad(0.057))}):Play()
+				tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+				tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(math.rad(-8.136), math.rad(-1.891), math.rad(-0.229))}):Play()
+				tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(42.8), math.rad(-12.376), math.rad(-11.345))}):Play()
+				tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-57.582), math.rad(-14.095), math.rad(3.953))}):Play()
+				tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+				tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(50.248), math.rad(12.376), math.rad(11.345))}):Play()
+				tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-72.708), math.rad(16.501), math.rad(-1.203))}):Play()
+				tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
+			end)
+			task.delay(stun + 0.2, function()
+				local speed = 0.2
+				tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1.2, 0) * CFrame.Angles(math.rad(-90.012), 0, 0)}):Play()
+				tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(6.245), 0, 0)}):Play()
+				tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(93.335), math.rad(-26.929), math.rad(-28.877))}):Play()
+				tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(2.75), math.rad(1.203), math.rad(0.974))}):Play()
+				tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+				tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(111.097), math.rad(4.584), math.rad(9.167))}):Play()
+				tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(10.657), math.rad(2.922), math.rad(0.229))}):Play()
+				tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+				tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(math.rad(-16.272), math.rad(-3.667), math.rad(-0.745))}):Play()
+				tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(51.28), math.rad(-20.97), math.rad(-25.611))}):Play()
+				tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-70.818), math.rad(-17.819), math.rad(2.807))}):Play()
+				tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+				tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(54.775), math.rad(12.376), math.rad(11.345))}):Play()
+				tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-81.704), math.rad(18.793), math.rad(0.115))}):Play()
+				tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
+			end)
+			task.delay(stun + 0.4, function()
+				local speed = 0.867 - 0.4
+				tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -1, 0) * CFrame.Angles(math.rad(-37.471), 0, 0)}):Play()
+				tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(3.323), 0, 0)}):Play()
+				tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(28.762), math.rad(-9.339), math.rad(4.412))}):Play()
+				tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(5.901), math.rad(2.636), math.rad(2.063))}):Play()
+				tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+				tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(31.283), math.rad(15.126), math.rad(2.636))}):Play()
+				tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(5.558), math.rad(6.36), math.rad(0.745))}):Play()
+				tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+				tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(math.rad(-7.219), math.rad(-6.532), math.rad(-2.292))}):Play()
+				tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(62.223), math.rad(-46.581), math.rad(-58.9))}):Play()
+				tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-103.247), math.rad(-24.809), math.rad(-3.266))}):Play()
+				tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+				tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(65.26), math.rad(12.376), math.rad(11.345))}):Play()
+				tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-103.476), math.rad(23.033), math.rad(4.641))}):Play()
+				tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
+			end)
+			task.delay(stun + 0.867, function()
+				local speed = 0.967 - 0.867
+				tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -0.95, 0) * CFrame.Angles(math.rad(-37.471), 0, 0)}):Play()
+				tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(2.693), 0, 0)}):Play()
+				tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(-2.807), math.rad(7.047), math.rad(-0.401))}):Play()
+				tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(4.813), math.rad(2.12), math.rad(1.662))}):Play()
+				tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+				tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(45.607), math.rad(11.287), math.rad(3.209))}):Play()
+				tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(4.526), math.rad(5.157), math.rad(0.63))}):Play()
+				tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+				tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(0, math.rad(-15.928), math.rad(-0.057))}):Play()
+				tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(45.665), math.rad(-50.879), math.rad(-80.787))}):Play()
+				tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-79.985), math.rad(13.235), math.rad(28.132))}):Play()
+				tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+				tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(63.541), math.rad(-7.735), math.rad(4.87))}):Play()
+				tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-82.964), math.rad(19.996), math.rad(0.344))}):Play()
+				tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
+			end)
+			task.delay(stun + 0.967, function()
+				local speed = 1.067 - 0.967
+				tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -0.9, 0) * CFrame.Angles(math.rad(-37.471), 0, 0)}):Play()
+				tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(2.063), 0, 0)}):Play()
+				tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(-2.005), math.rad(5.042), math.rad(-0.344))}):Play()
+				tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(3.667), math.rad(1.604), math.rad(1.318))}):Play()
+				tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
+				tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(60.103), math.rad(4.813), math.rad(7.047))}):Play()
+				tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(3.495), math.rad(3.953), math.rad(0.516))}):Play()
+				tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
+				tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(0, math.rad(-15.928), 0)}):Play()
+				tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(131.551), math.rad(-39.992), math.rad(-0.917))}):Play()
+				tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-60.848), math.rad(13.98), math.rad(20.34))}):Play()
+				tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
+				tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(48.759), math.rad(-6.474), math.rad(2.979))}):Play()
+				tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-63.14), math.rad(15.756), math.rad(-2.521))}):Play()
+				tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
+			end)
+
 		end)
-		if owner == origOwner then
-			dietween:Pause()
+		if not infector then
 			print("original")
-			wait()
-			hum.MaxHealth = 265
-			wait(0.1)
-			hum.Health = 265
+			task.delay(0.5, function()
+				hum.MaxHealth = 265
+				wait(0.35)
+				hum.Health = 265
+			end)
+
 		end
 
+
+		warn("continued")
 		local stunned = false
 
 		local escSuccess, escFail = 15, 25
@@ -527,6 +793,8 @@ local aSin = math.asin
 local aTan = math.atan
 
 warn("Added")
+
+--wait(10) -- let player die
 
 local Plr = game:GetService("Players").LocalPlayer
 local gui = Plr:WaitForChild("PlayerGui")
@@ -616,25 +884,31 @@ print('client message')
 --wait(2) -- simulate delay
 remote:FireServer("infected")
 playerRemote.OnClientEvent:Wait()
+warn("event passed")
 for _,v in pairs(Body:GetDescendants()) do
 	if v:IsA("BasePart") then
 		v.LocalTransparencyModifier = 0
 	end
 end
+warn("transparency passed")
 dof.NearIntensity, dof.InFocusRadius, dof.FocusDistance, dof.FarIntensity = 1, 2, 0.05, 0.75
 lighting.FogStart, lighting.FogEnd, lighting.FogColor = 0, 20, Color3.fromRGB(0, 0, 0)
 tweenServ:Create(lighting, TweenInfo.new(2.65), {FogStart = 0, FogEnd = 13}):Play()
 tweenServ:Create(cce, TweenInfo.new(2.65, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {TintColor = Color3.fromRGB(153, 70, 255)}):Play()
+warn("tweens 1")
 task.delay(2.65, function()
+	warn("delay")
 	lighting.FogColor, lighting.FogStart, lighting.FogEnd = Color3.fromRGB(128, 56, 148), 0, 20
 	tweenServ:Create(lighting, TweenInfo.new(1), {FogStart = 0, FogEnd = 13, FogColor = Color3.fromRGB(0, 0, 0)}):Play()
 	tweenServ:Create(cce, TweenInfo.new(1), {TintColor = Color3.fromRGB(255, 129, 129)}):Play()
 end)
 for _, anim in ipairs(Hum:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do anim:Stop() end
+warn("anim stopper")
 local headfollow, eyefollow, remoteWait, runservloop = true, false, nil, nil
 local headinvis = false
 Cam.CameraType = Enum.CameraType.Scriptable
 remoteWait = playerRemote.OnClientEvent:Connect(function(info)
+	warn("remote")
 	if info == "animFinished" then
 		headfollow = false
 		eyefollow = true
@@ -645,11 +919,11 @@ remoteWait = playerRemote.OnClientEvent:Connect(function(info)
 	end
 end)
 runservloop = runServ.RenderStepped:Connect(function()
-	for _,v in pairs(Body:GetDescendants()) do
-		if v:IsA("BasePart") then
-			v.LocalTransparencyModifier = 0
-		end
-	end
+	--for _,v in pairs(Body:GetDescendants()) do
+	--	if v:IsA("BasePart") then
+	--		v.LocalTransparencyModifier = 0
+	--	end
+	--end
 	if headfollow then
 		Cam.CFrame = Cam.CFrame:Lerp(CFrame.new((Core.Position + Vector3.new(0, -1, 0)) + (Core.CFrame.LookVector*9), Head.Position), 0.8)
 	elseif eyefollow then
@@ -1546,7 +1820,7 @@ sprintCor = coroutine.wrap(function()
 	while true do
 		runServ.Heartbeat:Wait()
 		if Hum:GetState() == Enum.HumanoidStateType.Jumping and not sprintDisabled then
-			stamina -= 15
+			stamina = stamina - 15
 			if stamina <= 0 then 
 				--print("Exhausted")
 				sprinting = false
@@ -1568,7 +1842,7 @@ sprintCor = coroutine.wrap(function()
 				Hum.WalkSpeed = vampSprint
 			end
 			if Hum.MoveDirection.Magnitude > 0 and stamina > 0 then
-				stamina -= 0.3
+				stamina = stamina - 0.3
 			elseif stamina <= 0 then
 				--("Exhausted")
 				sprinting = false
@@ -1581,7 +1855,7 @@ sprintCor = coroutine.wrap(function()
 			Hum.WalkSpeed = vampWalk
 		end
 		if ((not (Hum.MoveDirection.Magnitude > 0)) or not sprinting) and stamina + 0.15 <= maxStamina then
-			stamina += 0.15
+			stamina = stamina + 0.15
 			if sprintDisabled and (stamina/maxStamina) > 0.5 then 
 				sprintDisabled = false
 			end
@@ -1593,11 +1867,10 @@ sprintCor()
 
 --- Attacking ---
 
-local function raycheck(ray, range)
-	if not ray then
-		ray = workspace:Raycast(Core.Position + Core.CFrame.LookVector*1, Cam.CFrame.LookVector*6.5)
-	end
-	if not ray then return end
+local function raycheck(range)
+	local ray = workspace:Raycast(Core.Position + Core.CFrame.LookVector*1, Cam.CFrame.LookVector*range)
+	if ray == nil then return end
+	warn('ray passed')
 	local part = ray.Instance
 	local parent = part.Parent
 	while not parent == workspace and not parent == game and not parent:FindFirstChildWhichIsA("Humanoid") do
@@ -1616,8 +1889,8 @@ local params = RaycastParams.new()
 params.FilterDescendantsInstances = {Body}
 params.FilterType = Enum.RaycastFilterType.Blacklist
 local function grab()
-	local grabchar, part = raycheck()
-	if not grabchar or not grabchar:FindFirstChildWhichIsA("Humanoid") or not grabchar:FindFirstChild("uniquegrabid") then return end
+	local grabchar, part = raycheck(6.5)
+	if not grabchar or not grabchar:FindFirstChildWhichIsA("Humanoid") or not grabchar:FindFirstChild("uniquegrabid") or grabchar == Body then return end
 	sprinting = false
 	victim = grabchar
 	if victim == Body then return end
@@ -1644,6 +1917,7 @@ local function grab()
 	end)
 	follow = coroutine.wrap(function()
 		while victim do
+			if victim == Body then victim = nil break end
 			runServ.Heartbeat:Wait()
 			part.Parent.PrimaryPart.Velocity = Core.Velocity
 			if not biting then
@@ -1687,7 +1961,7 @@ input.InputBegan:Connect(function(obj, gameProcessed)
 			grabCD = true
 			remote:FireServer("swing")
 			grab()
-			wait(0.36)
+			wait(0.35)
 			grabCD = false
 		elseif victim and not biting then
 			sprinting = false
@@ -1826,14 +2100,14 @@ local function cooldowns(primRate, primCap, primDisable, primEnable, secRate, se
 		end
 
 		if primCharge < primCap and primDrainRate <= 0 then 
-			primCharge += primRate
+			primCharge = primCharge + primRate
 		elseif primDrainRate > 0 then
-			primCharge -= primDrainRate
+			primCharge = primCharge - primDrainRate
 		end
 		if secCharge < secCap and secDrainRate <= 0 then
-			secCharge += secRate
+			secCharge = secCharge + secRate
 		elseif secDrainRate > 0 then
-			secCharge -= secDrainRate
+			secCharge = secCharge - secDrainRate
 		end
 		if primEnabled then primaryBar.charge.BackgroundColor3 = Color3.fromRGB(255, 255, 255) else primaryBar.charge.BackgroundColor3 = Color3.fromRGB(150, 150, 150) end
 		if secEnabled then secondaryBar.charge.BackgroundColor3 = Color3.fromRGB(255, 255, 255) else secondaryBar.charge.BackgroundColor3 = Color3.fromRGB(150, 150, 150) end
@@ -2214,6 +2488,80 @@ local function infect()
 	function endSecondary()
 	end
 end
+local function space()
+	if infectcheck.Connected then infectcheck:Disconnect() end
+	releaseP, releaseS = true, false
+	-- GUI --
+	local name, primaryName, secondaryName = string.upper("Space"), "Banish", "--X--"
+	abilities, primaryBar, secondaryBar, main, prim, sec = abilityGui()
+	abilities.Parent = Plr.PlayerGui
+	main.AbilityName.Text, prim.primaryName.Text, sec.secondaryName.Text = name, primaryName, secondaryName
+	main.Rim.Inner.Image.Image, main.AbilityName.TextColor3, main.AbilityName.TextStrokeColor3 = "rbxassetid://497822691", Color3.fromRGB(179, 0, 255), Color3.fromRGB(206, 135, 199)
+	main.Rim.Inner.BackgroundColor3, main.Rim.BackgroundColor3 = Color3.fromRGB(134, 64, 255), Color3.fromRGB(233, 62, 255)
+	prim.primaryImage.Image, prim.primaryImage.BorderColor3 = "rbxassetid://0", Color3.fromRGB(255, 255, 255)
+	prim.primaryName.TextColor3, prim.primaryName.TextStrokeColor3 = Color3.fromRGB(134, 64, 255), Color3.fromRGB(175, 28, 28)
+	sec.secondaryImage.Image, sec.secondaryImage.BorderColor3 = "rbxassetid://0", Color3.fromRGB(255, 255, 255)
+	sec.secondaryName.TextColor3, sec.secondaryName.TextStrokeColor3 = Color3.fromRGB(134, 64, 255), Color3.fromRGB(175, 28, 28)
+	-- GUI --
+	primCharge, secCharge = 100, 0
+	primEnabled, secEnabled = false, false
+	local banishedPlrs = {}
+	local drainRate = 0.1
+	cooldowns(0.1, 100, 0, 100, 0, 100, 0, 33.3333)
+	local active, inputCheck = false, nil
+	function primary()
+		if not primEnabled then return end
+		if not active then
+			active = true
+			if #banishedPlrs <= 0 then
+				remote:FireServer("primary", "", "equip")
+				grabCD = true
+				inputCheck = input.InputBegan:Connect(function(obj, processed) 
+					if obj.UserInputType == Enum.UserInputType.MouseButton1 then
+						local banishtarg, _ = raycheck(6.5)
+						remote:FireServer("primary", "", "swing")
+						if not banishtarg or banishtarg == Body then return end
+						remote:FireServer("primary", banishtarg.Name, banishtarg:FindFirstChild("uniquegrabid").Value)
+						table.insert(banishedPlrs, banishtarg)
+						primDrainRate = drainRate
+						active = false
+						inputCheck:Disconnect()
+						wait(0.35)
+						grabCD = false
+						usingP = true
+					end
+				end)
+			end
+			if victim then
+				remote:FireServer("primary", "", "equip")
+				wait(1)
+				remote:FireServer("primary", victim.Name, victim:FindFirstChild("uniquegrabid").Value)
+				remote:FireServer("primary", Body.Name, Body:FindFirstChild("uniquegrabid").Value)
+				table.insert(banishedPlrs, Body)
+				primDrainRate = drainRate
+				active = false
+				inputCheck:Disconnect()
+				grabCD = false
+				usingP = true
+			end
+		end
+
+	end
+	function endPrimary()
+		if primCharge > 0 then return end
+		usingP = false
+		grabCD = false
+		warn("STOPPING!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		primDrainRate = 0
+		primCharge = 0
+		banishedPlrs = {}
+		remote:FireServer("primary", "", "empty")
+	end
+	function secondary()
+	end
+	function endSecondary()
+	end
+end
 --- End of script ---
 
 local abilityselect;
@@ -2224,6 +2572,7 @@ abilityselect = Plr.Chatted:Connect(function(msg)
 	elseif string.lower(msg) == "> decoy" then decoy()
 	elseif string.lower(msg) == "> wildfire" then wildfire()
 	elseif string.lower(msg) == "> infect" then infect()
+	elseif string.lower(msg) == "> space" then space()
 	end
 end)
 if script.Ability.Value == "Cloak" then
@@ -2236,6 +2585,8 @@ elseif script.Ability.Value == "Blackout" then
 	blackout()
 elseif script.Ability.Value == "Infect" then
 	infect()
+elseif script.Ability.Value == "Space" then
+	space()
 end
 
 local animate;
@@ -3020,10 +3371,10 @@ animate()]], script)
 		end
 		primaryScript.Disabled = true
 		local abilityInd = script.Ability:Clone()
-		if owner ~= origOwner then abilityInd.Value = script.Ability.Value primaryScript.Name = "minion" end
+		if infector then abilityInd.Value = script.Ability.Value primaryScript.Name = "minion" end
 		abilityInd.Parent = primaryScript
 		wait()
-		primaryScript.Parent = owner.Character
+		primaryScript.Parent = char
 		primaryScript.Disabled = false
 		remoteValue.Parent = primaryScript
 		local ambienttracker = Instance.new("Color3Value")
@@ -3035,8 +3386,7 @@ animate()]], script)
 			odambienttracker.Value = lighting.OutdoorAmbient
 		end)
 
-
-
+		warn("Made it past the script stuff..")
 		local RagdollJoints
 		local function ragjoints()
 			RagdollJoints = Instance.new("Folder")
@@ -3207,6 +3557,29 @@ animate()]], script)
 			if not anchorTime then anchorTime = 0 end
 			if offset then chara.PrimaryPart.CFrame = chara.PrimaryPart.CFrame * offset end
 			if chara:FindFirstChild("Humanoid") then chara.Humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
+
+			--if chara == char then
+			--	--ltorsomotor.C0 = ltorsoOrig
+			--	--torsomotor.C0 = torsoOrig
+			--	--larmmotor.C0 = larmOrig
+			--	--llarmmotor.C0 = llarmOrig
+			--	--lhandmotor.C0 = lhandOrig
+			--	--rarmmotor.C0 = rarmOrig
+			--	--rlarmmotor.C0 = rlarmOrig
+			--	--rhandmotor.C0 = rhandOrig
+			--	--headmotor.C0 = headOrig
+			--	--rlegmotor.C0 = rlegOrig
+			--	--rllegmotor.C0 = rllegOrig
+			--	--rfootmotor.C0 = rfootOrig
+			--	--llegmotor.C0 = llegOrig
+			--	--lllegmotor.C0 = lllegOrig
+			--	--lfootmotor.C0 = lfootOrig
+			--	rarm.Name, rlarm.Name, rhand.Name = rarmName, rlarmName, rhandName
+			--	larm.Name, llarm.Name, lhand.Name = larmName, llarmName, lhandName
+			--	rleg.Name, rlleg.Name, rfoot.Name = rlegName, rllegName, rfootName
+			--	lleg.Name, llleg.Name, lfoot.Name = llegName, lllegName, lfootName
+			--end
+
 			if chara:FindFirstChild("UpperTorso") then
 				for _,v in pairs(chara:GetDescendants()) do
 					if v:IsA("BasePart") then v.Massless = true end
@@ -3227,10 +3600,11 @@ animate()]], script)
 							socket.Attachment1 = att1
 							socket.Enabled = true
 
-							v.Enabled = false
+							v:Destroy()
 						end
 					end
 				end
+				for _,v in pairs(chara:GetDescendants()) do if v:IsA("Attachment") and v.Name ~= "RagdollSocket" then v:Destroy() end end
 			elseif chara:FindFirstChild("Torso") then
 				for index,joint in pairs(chara:GetDescendants()) do
 					if joint:IsA("BasePart") then joint.Massless = true end
@@ -3256,6 +3630,7 @@ animate()]], script)
 				chararootpart.CanCollide = false
 				chararootpart.Massless = true
 			end
+
 			local tempclone = chara:Clone()
 			if chara:FindFirstChild("playerID") and not players:GetPlayerFromCharacter(chara) then
 				chararemoving = chara.AncestryChanged:Connect(function()
@@ -3299,22 +3674,22 @@ animate()]], script)
 			ouchie.SoundId = "rbxassetid://175505949"
 			ouchie.Volume = 1
 			ouchie:Play()
-			ragdoll(character)
+			ragdoll(char)
 			wait(7)
-			if char == owner.Character then
+			if not isNPC and char == owner.Character then
 				owner:LoadCharacter()
 			end
 		end)
-
-		local ownerDied
-		ownerDied = owner.CharacterRemoving:Connect(function()
-			ownerDied:Disconnect()
-			owner.CharacterAdded:Wait()
-			wait()
-			if script:FindFirstChild("fixScript") then 
-				script.fixScript:Clone().Parent = owner.Character owner.Character:WaitForChild("fixScript").Disabled = false
-			else
-				NLS([[
+		if not isNPC then
+			local ownerDied
+			ownerDied = owner.CharacterRemoving:Connect(function()
+				ownerDied:Disconnect()
+				owner.CharacterAdded:Wait()
+				wait()
+				if script:FindFirstChild("fixScript") then 
+					script.fixScript:Clone().Parent = owner.Character owner.Character:WaitForChild("fixScript").Disabled = false
+				else
+					NLS([[
 if not owner then owner = game:GetService("Players").LocalPlayer end
 print("Fixing")
 owner.CameraMode = Enum.CameraMode.Classic
@@ -3327,16 +3702,20 @@ for _, v in pairs(game:GetService("Lighting"):GetChildren()) do if v.Name == "ze
 for _,v in pairs(workspace:GetChildren()) do if v.Name == "zenvetierem" then v:Destroy() end end
 for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or v.Name == "CircleProgressGui" or v.Name == "VH3AbilityUI" then v:Destroy() end end
 ]], owner.Character)
-			end
-			print(owner.Name)
-			for _,v in pairs(workspace:GetDescendants()) do if v.Name == "BlackoutActive" then print(v.Name) v.AncestryChanged:Wait() end end
-			table.remove(activeVampires, table.find(activeVampires, owner.Name))
-			if #activeVampires <= 0 then
-				for _,v in pairs(script:GetChildren()) do if v:IsA("Model") and v:FindFirstChildWhichIsA("Humanoid") then v.Parent = workspace end end
-				script:Destroy()
-			end
-		end)
+				end
+				print(owner.Name)
+				if not isNPC then
+					for _,v in pairs(workspace:GetDescendants()) do if v.Name == "BlackoutActive" then print(v.Name) v.AncestryChanged:Wait() end end
+					if table.find(activeVampires, owner) then table.remove(activeVampires, table.find(activeVampires, owner)) end
+					if #activeVampires <= 0 then
+						for _,v in pairs(script:GetChildren()) do if v:IsA("Model") and v:FindFirstChildWhichIsA("Humanoid") then v.Parent = workspace end end
+						warn("DELETE")
+						script:Destroy()
+					end
+				end
 
+			end)
+		end
 		local swingCD = false
 		local netowner;
 		local targPlr;
@@ -3538,10 +3917,14 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 					pD.ActionText = "Press ".. escKey.. "! ".. escProg.. "%"
 					pD.ObjectText = "Hit the correct key to escape!"
 				end
-				
+
 				if escProg >= 100 then
 					stunned = true
-					playerRemote:FireClient(owner, "escaped")
+					if not isNPC then
+						playerRemote:FireClient(owner, "escaped")
+					else
+
+					end
 				end
 				if ui and ui.Parent and pbar.Parent and blabel.Parent and gradient.Parent then
 					if escKey == "W" then gradient.Color = blue
@@ -3555,7 +3938,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end)
 			table.insert(escConnections, keypress)
 		end
-
+		warn("escape keys")
 		-- Animations --
 		local crouching = false
 		local running = false
@@ -3583,6 +3966,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end
 		end
 		hum.Running:Connect(function(speed)
+			--print("running")
 			isMoving()
 		end)
 		local function sit(speed)
@@ -3610,53 +3994,10 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
 			end)
 		end
-		local function crouch(speed)
-			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig * CFrame.new(0, -0.9, 0)}):Play()
-			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig * CFrame.Angles(math.rad(-44.977), 0, 0)}):Play()
-			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig * CFrame.Angles(math.rad(21.715), math.rad(-37.185), math.rad(8.881))}):Play()
-			tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig * CFrame.Angles(math.rad(45.034), math.rad(-30.825), math.rad(15.986))}):Play()
-			tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig * CFrame.Angles(math.rad(32.086), math.rad(49.217), math.rad(-0.401))}):Play()
-			tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig * CFrame.Angles(math.rad(41.711), math.rad(45.665), math.rad(-13.923))}):Play()
-			tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig * CFrame.Angles(math.rad(-1.891), math.rad(7.391), math.rad(13.063))}):Play()
-			tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig * CFrame.Angles(math.rad(44.977), 0, 0)}):Play()
-			tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig * CFrame.Angles(math.rad(90.012), 0, 0)}):Play()
-			tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig * CFrame.Angles(math.rad(-82.506), 0, 0)}):Play()
-			tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig * CFrame.Angles(math.rad(37.471), 0, 0)}):Play()
-			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig * CFrame.Angles(math.rad(-127.483), 0, 0)}):Play()
-			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig * CFrame.Angles(math.rad(-0.229), math.rad(-5.959), math.rad(-4.584))}):Play()
-		end
-
-		local function defaultPos(speed, char)
-			--print(speed)
-			if crouching then
-				crouch(speed)
-				return
-			end
-			tweenServ:Create(ltorsomotor, TweenInfo.new(speed), {C0 = ltorsoOrig}):Play()
-			tweenServ:Create(torsomotor, TweenInfo.new(speed), {C0 = torsoOrig}):Play()
-			tweenServ:Create(larmmotor, TweenInfo.new(speed), {C0 = larmOrig}):Play()
-			tweenServ:Create(llarmmotor, TweenInfo.new(speed), {C0 = llarmOrig}):Play()
-			tweenServ:Create(lhandmotor, TweenInfo.new(speed), {C0 = lhandOrig}):Play()
-			tweenServ:Create(rarmmotor, TweenInfo.new(speed), {C0 = rarmOrig}):Play()
-			tweenServ:Create(rlarmmotor, TweenInfo.new(speed), {C0 = rlarmOrig}):Play()
-			tweenServ:Create(rhandmotor, TweenInfo.new(speed), {C0 = rhandOrig}):Play()
-			tweenServ:Create(headmotor, TweenInfo.new(speed), {C0 = headOrig}):Play()
-			tweenServ:Create(rlegmotor, TweenInfo.new(speed), {C0 = rlegOrig}):Play()
-			tweenServ:Create(rllegmotor, TweenInfo.new(speed), {C0 = rllegOrig}):Play()
-			tweenServ:Create(rfootmotor, TweenInfo.new(speed), {C0 = rfootOrig}):Play()
-			tweenServ:Create(llegmotor, TweenInfo.new(speed), {C0 = llegOrig}):Play()
-			tweenServ:Create(lllegmotor, TweenInfo.new(speed), {C0 = lllegOrig}):Play()
-			tweenServ:Create(lfootmotor, TweenInfo.new(speed), {C0 = lfootOrig}):Play()
-			task.delay(speed, function()
-				rarm.Name, rlarm.Name, rhand.Name = rarmName, rlarmName, rhandName
-				larm.Name, llarm.Name, lhand.Name = larmName, llarmName, lhandName
-				rleg.Name, rlleg.Name, rfoot.Name = rlegName, rllegName, rfootName
-				lleg.Name, llleg.Name, lfoot.Name = llegName, lllegName, lfootName
-			end)
-		end
 
 		while waiting do wait(0.1) end
-		if owner ~= origOwner then defaultPos(0.25) end
+		if infector then defaultPos(0.25) end
+		warn("got past waiting")
 
 		local function stunAnim()
 			--print("animating")
@@ -3690,7 +4031,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end
 		end
 		local function hardfall(stun, char)
-			if char and char ~= owner.Character and char:FindFirstChild("UpperTorso") then
+			if char and (char ~= owner.Character or char ~= owner) and char:FindFirstChild("UpperTorso") then
 				local head = char.Head
 				local rarm = char:FindFirstChild("RightUpperArm")
 				local larm = char:FindFirstChild("LeftUpperArm")
@@ -3957,6 +4298,43 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end
 
 		end
+		local function swing()
+			swingCD = true
+			rarmmotor.C0, rlarmmotor.C0, larmmotor.C0, llarmmotor.C0 = rarmOrig, rlarmOrig, larmOrig, llarmOrig
+			llarm.Name, larm.Name, rarm.Name, rlarm.Name = llarmName, larmName, rarmName, rlarmName
+			rarm.Name = "animating"
+			local torsoGoal1, headGoal1 = upperTorso.Waist.C0 * CFrame.Angles(math.rad(10), 0, 0), head.Neck.C0 * CFrame.Angles(math.rad(-10), 0, 0)
+			local rarmGoal1 = rarmmotor.C0 * CFrame.Angles(math.rad(165), math.rad(90), math.rad(10))
+			local torsoGoal2, headGoal2 = upperTorso.Waist.C0 * CFrame.Angles(math.rad(-10), 0, 0), head.Neck.C0 * CFrame.Angles(math.rad(10), 0, 0)
+			local rarmGoal2 = rarmmotor.C0 * CFrame.Angles(math.rad(20), math.rad(35), math.rad(-20))
+			tweenServ:Create(upperTorso.Waist, TweenInfo.new(0.125), {C0 = torsoGoal1}):Play()
+			tweenServ:Create(head.Neck, TweenInfo.new(0.125), {C0 = headGoal1}):Play()
+			tweenServ:Create(rarmmotor, TweenInfo.new(0.125), {C0 = rarmGoal1}):Play()
+			task.delay(0.125, function()
+				tweenServ:Create(upperTorso.Waist, TweenInfo.new(0.15), {C0 = torsoGoal2}):Play()
+				tweenServ:Create(head.Neck, TweenInfo.new(0.15), {C0 = headGoal2}):Play()
+				tweenServ:Create(rarmmotor, TweenInfo.new(0.15), {C0 = rarmGoal2}):Play()
+			end)
+			task.delay(0.3, function()
+				swingCD = false
+				upperTorso.Waist.C0, head.Neck.C0 = torsoOrig, headOrig
+				if victim then
+					rarmmotor.C0 = rarmOrig * CFrame.Angles(math.rad(74.886), math.rad(-14.725), math.rad(37.242))
+					rlarmmotor.C0 = rlarmOrig * CFrame.Angles(math.rad(-1.948), math.rad(1.146), math.rad(-27.502))
+				elseif running then
+					larm.Name, llarm.Name, rarm.Name, rlarm.Name = "animating", "animating", "animating", "animating"
+					larmtween = tweenServ:Create(larmmotor, TweenInfo.new(0.15), {C0 = larmOrig * CFrame.Angles(math.rad(-33.023), math.rad(-75), math.rad(-90.012))})
+					llarmtween = tweenServ:Create(llarmmotor, TweenInfo.new(0.15), {C0 = llarmOrig * CFrame.Angles(math.rad(15.063), 0, math.rad(-23.09))})
+					rarmtween = tweenServ:Create(rarmmotor, TweenInfo.new(0.15), {C0 = rarmOrig * CFrame.Angles(math.rad(-28.023), math.rad(75), math.rad(90.012))})
+					rlarmtween = tweenServ:Create(rlarmmotor, TweenInfo.new(0.15), {C0 = rlarmOrig * CFrame.Angles(math.rad(15.063), 0, math.rad(23.09))})
+					larmtween:Play() llarmtween:Play() rarmtween:Play() rlarmtween:Play()
+				else
+					rarm.Name = rarmName
+					rarmmotor.C0 = rarmOrig
+				end
+			end)
+		end
+
 
 		-- Ability related anims --
 		local function flamepunchStart(speedM)
@@ -4092,7 +4470,16 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				end
 				--hrp.CFrame = hrp.CFrame * CFrame.new(0, 0.25, 0)
 				fallvictim.Humanoid.Health += value*1.25
-				if fallvictim.Humanoid.Health <= 0 then playerRemote:FireClient(owner, "drop") if fallvictim.PrimaryPart then fallvictim.PrimaryPart.Anchored = true end end
+				if fallvictim.Humanoid.Health <= 0 and not isNPC then
+					if not isNPC then 
+						playerRemote:FireClient(owner, "drop")
+					else
+
+					end
+					if fallvictim.PrimaryPart then 
+						fallvictim.PrimaryPart.Anchored = true
+					end
+				end
 				wait()
 				if fallvictim.Humanoid.Health <= 0 then ragdoll(fallvictim, CFrame.new(0, 2, 0), 1) end
 				hum.Health += value
@@ -4125,6 +4512,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			char.Humanoid.Health += 6
 		end
 		---- Remote ----
+		warn("now onto the remote stuff")
 		remote.OnServerEvent:Connect(function(player, action, target, value)
 			if player ~= owner then return end
 			if action == "crouch" then
@@ -4145,7 +4533,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 					vampire = true
 					if face then face.Texture = "rbxassetid://1111587497" end
 					transformAnim(char)
-					for _,v in pairs(owner.Character:GetDescendants()) do
+					for _,v in pairs(char:GetDescendants()) do
 						if v:IsA("BasePart") and not v.Parent:IsA("Accessory") then
 							table.insert(origParts, v)
 							table.insert(origColors, v.Color)
@@ -4180,36 +4568,11 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 					end
 				end
 			elseif action == "swing" and not swingCD then
-				swingCD = true
-				rarmmotor.C0, rlarmmotor.C0, larmmotor.C0, llarmmotor.C0 = rarmOrig, rlarmOrig, larmOrig, llarmOrig
-				llarm.Name, larm.Name, rarm.Name, rlarm.Name = llarmName, larmName, rarmName, rlarmName
-				rarm.Name = "animating"
-				local torsoGoal1, headGoal1 = upperTorso.Waist.C0 * CFrame.Angles(math.rad(10), 0, 0), head.Neck.C0 * CFrame.Angles(math.rad(-10), 0, 0)
-				local rarmGoal1 = rarmmotor.C0 * CFrame.Angles(math.rad(165), math.rad(90), math.rad(10))
-				local torsoGoal2, headGoal2 = upperTorso.Waist.C0 * CFrame.Angles(math.rad(-10), 0, 0), head.Neck.C0 * CFrame.Angles(math.rad(10), 0, 0)
-				local rarmGoal2 = rarmmotor.C0 * CFrame.Angles(math.rad(20), math.rad(35), math.rad(-20))
-				tweenServ:Create(upperTorso.Waist, TweenInfo.new(0.125), {C0 = torsoGoal1}):Play()
-				tweenServ:Create(head.Neck, TweenInfo.new(0.125), {C0 = headGoal1}):Play()
-				tweenServ:Create(rarmmotor, TweenInfo.new(0.125), {C0 = rarmGoal1}):Play()
-				task.delay(0.125, function()
-					tweenServ:Create(upperTorso.Waist, TweenInfo.new(0.15), {C0 = torsoGoal2}):Play()
-					tweenServ:Create(head.Neck, TweenInfo.new(0.15), {C0 = headGoal2}):Play()
-					tweenServ:Create(rarmmotor, TweenInfo.new(0.15), {C0 = rarmGoal2}):Play()
-				end)
-				task.delay(0.3, function()
-					swingCD = false
-					upperTorso.Waist.C0, head.Neck.C0 = torsoOrig, headOrig
-					if victim then
-						rarmmotor.C0 = rarmOrig * CFrame.Angles(math.rad(74.886), math.rad(-14.725), math.rad(37.242))
-						rlarmmotor.C0 = rlarmOrig * CFrame.Angles(math.rad(-1.948), math.rad(1.146), math.rad(-27.502))
-					else
-						rarm.Name = rarmName
-						rarmmotor.C0 = rarmOrig
-					end
-				end)
+				swing()
 			elseif action == "hit" then
 				for _,v in pairs(workspace:GetDescendants()) do if v.Name == target and v:FindFirstChildWhichIsA("Humanoid") and v:FindFirstChild("uniquegrabid") and v.uniquegrabid.Value == value then target = v end end
 				victim = target
+				if not victim then return end
 				victim.Archivable = true
 				targPlr = players:GetPlayerFromCharacter(target)
 				victimDisplay = victim.Humanoid.DisplayDistanceType
@@ -4221,15 +4584,19 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 						if v.Anchored then victim = nil return end
 						pcall(function() phys:SetPartCollisionGroup(v, "grabCollision") end)
 						netowner = v:GetNetworkOwner()
-						v:SetNetworkOwner(owner)
+						if not isNPC then
+							v:SetNetworkOwner(owner)
+						else
+							v:SetNetworkOwner(nil)
+						end
 					end
 				end
 				victim.Humanoid.PlatformStand = true
-				playerRemote:FireClient(owner)
+				if not isNPC then playerRemote:FireClient(owner) end
 				for _,v in pairs(target:GetDescendants()) do if v:isA("BasePart") then
 						if v.Anchored then victim = nil return end
 						pcall(function() phys:SetPartCollisionGroup(v, "grabCollision") end)
-						v:SetNetworkOwner(owner)
+						if not isNPC then v:SetNetworkOwner(owner) else v:SetNetworkOwner(nil) end
 					end
 				end
 				victim.Humanoid.PlatformStand = true
@@ -4313,9 +4680,9 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				if not target:FindFirstChildWhichIsA("Humanoid") or target:FindFirstChildWhichIsA("Humanoid").Health <= 0 then
 					ragdoll(target)
 					wait(0.1)
-					playerRemote:FireClient(owner)
+					if not isNPC then playerRemote:FireClient(owner) end
 				else
-					playerRemote:FireClient(owner)
+					if not isNPC then playerRemote:FireClient(owner) end
 					for _,v in pairs(target:GetDescendants()) do
 						if v:IsA("BasePart") and not v.Anchored then
 							if targPlr then
@@ -4369,7 +4736,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 						task.delay(0.25, function() larm.Name, llarm.Name = larmName, llarmName end)
 					end)
 				end
-				playerRemote:FireClient(owner)
+				if not isNPC then playerRemote:FireClient(owner) end
 			elseif action == "draining" and target then
 				drain(player, action, target, value)
 			elseif action == "stopdraining" then
@@ -4920,7 +5287,7 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			end
 		end
 
-		local function infect()
+		local function infect()		
 			function primary(player, action, target, value)
 				if not victim or not victim:FindFirstChild("Humanoid") or victim.Humanoid.Health <= 0 then return end
 				target = victim
@@ -4928,19 +5295,314 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 				remote.OnServerEvent:Wait()
 				target.Humanoid.WalkSpeed = 0
 				target.Humanoid.JumpPower = 0
-				thescript(players:GetPlayerFromCharacter(target), owner)
+				if players:GetPlayerFromCharacter(target) then 
+					thescript(players:GetPlayerFromCharacter(target), owner)
+				else
+					thescript(target, owner)
+				end
 
 			end
 		end
-		local abilityselect;
-		abilityselect = owner.Chatted:Connect(function(msg)
-			if string.lower(msg) == "> blackout" then blackout()
-			elseif string.lower(msg) == "> cloak" then cloak()
-			elseif string.lower(msg) == "> decoy" then decoy()
-			elseif string.lower(msg) == "> wildfire" then wildfire()
-			elseif string.lower(msg) == "> infect" then infect()
+		local function space()
+			local banishedScripts = {}
+			local victimParts, victimTransparency = {}, {}
+			local equipSound, swoosh, hit, scream = Instance.new("Sound"), Instance.new("Sound"), Instance.new("Sound"), Instance.new("Sound")
+			equipSound.SoundId, equipSound.TimePosition, equipSound.Volume = "rbxassetid://2783294896", 0.2, 0.5
+			swoosh.SoundId, swoosh.TimePosition, swoosh.Volume = "rbxassetid://5058160717", 0.35, 0.5
+			hit.SoundId, hit.TimePosition, hit.Volume = "rbxassetid://8284260932", 0, 0.5
+			scream.SoundId, scream.TimePosition, scream.Volume = "rbxassetid://9231665721", 0, 2
+			local screamFade = Instance.new("EqualizerSoundEffect")
+			screamFade.HighGain, screamFade.LowGain, screamFade.MidGain = 0, 0, 0
+			function primary(player, action, target, value)
+				print(player, action, target, value)
+				if value == "equip" then
+					if not equipSound then
+						equipSound = Instance.new("Sound")
+						equipSound.SoundId, equipSound.TimePosition, equipSound.Volume = "rbxassetid://2783294896", 0.125, 0.5
+					end
+					equipSound.Parent = hrp
+					equipSound:Play()
+				elseif value == "swing" then
+					if not swoosh then
+						swoosh = Instance.new("Sound")
+						swoosh.SoundId, swoosh.TimePosition, swoosh.Volume = "rbxassetid://5058160717", 0.35, 0.5
+					end
+					swoosh.Parent = hrp
+					swoosh:Play()
+				elseif value == "empty" then
+					for _,v in pairs(banishedScripts) do
+						if v:IsDescendantOf(game) then 
+							if v:FindFirstChild("active") then
+								v.active.Value = false
+							else
+								local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", false, v
+								activeVal.Parent = v
+							end
+							local targhum = v.Parent:FindFirstChildWhichIsA("Humanoid")
+							if not targhum then
+								if v.Parent:IsA("PlayerGui") and v.Parent.Parent:IsA("Player") and v.Parent.Parent.Character and v.Parent.Parent.Character:FindFirstChildWhichIsA("Humanoid") then targhum = v.Parent.Parent.Character:FindFirstChildWhichIsA("Humanoid") end
+							end
+							if targhum and targhum:FindFirstChild("Voided") then targhum.Voided:Destroy() end
+						end
+					end
+					for i,v in pairs(victimParts) do v.Transparency = victimTransparency[i] end
+					banishedScripts, victimParts = {}, {}
+				elseif value ~= "" then
+					warn("start")
+					for _,v in pairs(workspace:GetDescendants()) do if v.Name == target and v:FindFirstChildWhichIsA("Humanoid") and v:FindFirstChild("uniquegrabid") and v.uniquegrabid.Value == value then target = v end end
+					warn("got target")
+					--if not target then return end
+					local victimPlr = players:GetPlayerFromCharacter(target)
+					screamFade.HighGain, screamFade.LowGain, screamFade.MidGain = 0, 0, 0
+					if target ~= char then
+						warn(target.Name, victimPlr)
+						if not hit then
+							hit = Instance.new("Sound")
+							hit.SoundId, hit.TimePosition, hit.Volume = "rbxassetid://821439273", 0, 0.5
+						end
+						if not scream then
+							scream = Instance.new("Sound")
+							scream.SoundId, scream.TimePosition, scream.Volume = "rbxassetid://9066230755", 0, 2
+						end
+						hit.Parent, scream.Parent = hrp, target:FindFirstChildWhichIsA("BasePart")
+						warn("After sounds")
+						hit:Play() scream:Play()
+						--wait(1.5)
+						if not target.PrimaryPart then if target:FindFirstChild("HumanoidRootPart") then target.PrimaryPart = target.HumanoidRootPart elseif target:FindFirstChild("Torso") then target.PrimaryPart = target.Torso elseif target:FindFirstChild("LowerTorso") then target.PrimaryPart = target.LowerTorso else target.PrimaryPart = target:FindFirstChildWhichIsA("BasePart") end end
+						target.PrimaryPart.CFrame = CFrame.new(target.PrimaryPart.Position, hrp.Position)
+						target.PrimaryPart.CFrame = target.PrimaryPart.CFrame*CFrame.Angles(90, 0, 0)
+						target.PrimaryPart.AssemblyLinearVelocity = (target.PrimaryPart.Position - hrp.Position).Unit * 50 + Vector3.new(0, 10, 0)
+					end
+
+					local indicator = Instance.new("BoolValue") indicator.Name, indicator.Parent, indicator.Value = "Voided", target:FindFirstChildWhichIsA("Humanoid"), true
+					task.delay(0.6, function()
+						warn("pre-banish")
+						if target:FindFirstChild("banishVFX") then
+							print("making active")
+							if not target.banishVFX:FindFirstChild("active") then
+								local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
+								activeVal.Parent = target:WaitForChild("banishVFX")
+							end
+							target.banishVFX:WaitForChild("active").Value = true
+							table.insert(banishedScripts, target.banishVFX)
+						elseif script:FindFirstChild("banishVFX") then
+							print("adding script")
+							local banishVFX = script.banishVFX:Clone()
+							if victimPlr then banishVFX.Parent = victimPlr.PlayerGui else banishVFX.Parent = target end
+							banishVFX.Disabled = false
+							banishVFX:WaitForChild("active").Value = true
+							table.insert(banishedScripts, banishVFX)
+						elseif players:GetPlayerFromCharacter(target) then
+							local banishVFX, banishParent;
+							if victimPlr then banishParent = victimPlr.PlayerGui else banishParent = target end
+							banishVFX = NLS([[script:WaitForChild("active")
+
+local players = game:GetService("Players")
+local lighting = game:GetService("Lighting")
+local tweenServ = game:GetService("TweenService")
+local runServ = game:GetService("RunService")
+local debris = game:GetService("Debris")
+local phys = game:GetService("PhysicsService")
+local lights, lightColours = {}, {}
+local parts, particles, sounds, partsTrans, particlesTrans = {}, {}, {}, {}, {}
+local decals, decalTrans = {}, {}
+
+local plr = players.LocalPlayer
+local char = plr.Character
+local banished = false
+
+local banishSound = Instance.new("Sound")
+banishSound.SoundId, banishSound.Volume, banishSound.Parent, banishSound.Looped = "rbxassetid://9157343533", 0, workspace, true
+local cce, dof = Instance.new("ColorCorrectionEffect"), Instance.new("DepthOfFieldEffect")
+
+dof.FarIntensity, dof.FocusDistance, dof.InFocusRadius, dof.NearIntensity = 0, 0, 0, 0
+cce.Parent, dof.Parent = lighting, lighting
+local cceGoal, dofGoal = {Brightness = 0.1, Contrast = 0.25, Saturation = -1, TintColor = Color3.fromRGB(234, 237, 255)}, {FarIntensity = 1, FocusDistance = 0, InFocusRadius = 25, NearIntensity = 1}
+local cceEnd, dofEnd = {Brightness = 0, Contrast = 0, Saturation = 0, TintColor = Color3.fromRGB(255, 255, 255)}, {FarIntensity = 0, FocusDistance = 0, InFocusRadius = 0, NearIntensity = 0}
+local cceTween, dofTween = tweenServ:Create(cce, TweenInfo.new(0.5), cceGoal), tweenServ:Create(dof, TweenInfo.new(0.5), dofGoal)
+
+local function tempRemove(object)
+	if object:IsA("BasePart") then
+		--print(object.Name)
+		table.insert(parts, object) table.insert(partsTrans, object.Transparency)
+		local stasis = Instance.new("BodyPosition", object)
+		stasis.Position, stasis.MaxForce, stasis.P = object.Position, Vector3.new(0, math.huge, 0), 5000
+		stasis.Name = "riftstasis"
+
+		phys:SetPartCollisionGroup(object, "RiftPlane")
+		--object.Transparency = 1
+		tweenServ:Create(object, TweenInfo.new(0.5), {Transparency = 1}):Play()
+	elseif object:IsA("Decal") then
+		table.insert(decals, object) table.insert(decalTrans, object.Transparency)
+		--object.Transparency = 1
+		tweenServ:Create(object, TweenInfo.new(0.5), {Transparency = 1}):Play()
+	elseif object:IsA("ParticleEmitter") then
+		--print(object.Name)
+		table.insert(particles, object) table.insert(particlesTrans, object.Transparency)
+		object.Transparency = NumberSequence.new(1)
+	elseif object:IsA("Sound") then
+		--print(object.Name)
+		table.insert(sounds, object)
+		local mute = Instance.new("EqualizerSoundEffect")
+		mute.Name = "MuteSound"
+		mute.HighGain, mute.LowGain, mute.MidGain, mute.Parent = 0, 0, 0, object
+		tweenServ:Create(mute, TweenInfo.new(1), {HighGain = -80, LowGain = -35, MidGain = -80}):Play()
+	end
+end
+
+local function restoreCharacter(hum)
+	warn("RESTORE RESTORE RESTORE")
+	local partsRem, particlesRem, soundsRem, decalsRem = {}, {}, {}, {}
+	for i, v in pairs(hum.Parent:GetDescendants()) do
+		if table.find(parts, v) then v.Transparency = partsTrans[i] table.insert(partsRem, v) 
+		elseif table.find(particles, v) then
+			v.Transparency = particlesTrans[i] table.insert(particles, v)
+		elseif table.find(sounds, v) then
+			if v:FindFirstChild("MuteSound") then 
+				tweenServ:Create(v.MuteSound, TweenInfo.new(1), {HighGain = 0, MidGain = 0}):Play()
+				tweenServ:Create(v.MuteSound, TweenInfo.new(0.35), {LowGain = 0}):Play()
+				debris:AddItem(v.MuteSound, 1.5)
+				table.insert(soundsRem, v)
+			end
+		elseif table.find(decals, v) then
+			v.Transparency = decalTrans[i] table.insert(decalsRem, v)
+		end
+	end
+	if #partsRem <= 0 and #particlesRem <= 0 and #soundsRem <= 0 and #decalsRem <= 0 then
+		task.delay(0.3, function()
+			for _,v in pairs(hum.Parent:GetDescendants()) do 
+				if (v:IsA("BasePart") or v:IsA("Decal")) and v.Name ~= "HumanoidRootPart" then v.Transparency = 0 end 
 			end
 		end)
+	else 
+		warn(#partsRem, #particlesRem, #soundsRem, #decalsRem)
+	end
+	for _,v in pairs(partsRem) do table.remove(partsTrans, table.find(parts, v)) table.remove(parts, table.find(parts, v)) end
+	for _,v in pairs(particlesRem) do table.remove(particlesTrans, table.find(particles, v)) table.remove(particles, table.find(particles, v)) end
+	for _,v in pairs(soundsRem) do table.remove(sounds, table.find(sounds, v)) end
+	for _,v in pairs(decalsRem) do table.remove(decalTrans, table.find(decals, v)) table.remove(decals, table.find(decals, v)) end
+end
+
+local function restoreObjects()
+	for _,v in pairs(sounds) do
+		if v:FindFirstChild("MuteSound") and v.MuteSound:IsA("EqualizerSoundEffect") then
+			tweenServ:Create(v.MuteSound, TweenInfo.new(1), {HighGain = 0, MidGain = 0}):Play()
+			tweenServ:Create(v.MuteSound, TweenInfo.new(0.35), {LowGain = 0}):Play()
+			debris:AddItem(v.MuteSound, 1.5)
+		end
+	end
+	for i,v in pairs(parts) do
+		v.Transparency = partsTrans[i]
+		phys:SetPartCollisionGroup(v, "Default")
+		if v:FindFirstChild("riftstasis") then
+			v.riftstasis:Destroy()
+		end
+	end
+	for i,v in pairs(particles) do v.Transparency = particlesTrans[i] end
+	for i,v in pairs(decals) do v.Transparency = decalTrans[i] end
+end
+
+local function removeObj(object)
+	if object:IsA("Humanoid") and not object:FindFirstChild("Voided") and object.Parent and object.Parent ~= char then 
+		pcall(function() print(object.Parent.Name) end)
+		for _,v in pairs(object.Parent:GetDescendants()) do
+			tempRemove(v)
+		end
+	elseif object:IsA("BasePart") and object.Parent and object.Parent:IsA("Tool") and not object:FindFirstChild("Voided") then
+		for _,v in pairs(object.Parent:GetDescendants()) do
+			tempRemove(v)
+		end
+	elseif object:IsA("Humanoid") and object:FindFirstChild("Voided") and object.Parent then 
+		restoreCharacter(object)
+	end
+end
+
+local function vfxEnabled()
+	banishSound.TimePosition = math.random(0, banishSound.TimeLength*100)/100
+	banishSound.PlaybackSpeed = 0
+	cce.Brightness, cce.Contrast, cce.Saturation, cce.TintColor = 2, 4, 0.3, Color3.fromRGB(72, 0, 207)
+	dof.InFocusRadius = 1
+	--runServ.RenderStepped:Wait()
+	for _,v in pairs(workspace:GetDescendants()) do removeObj(v) end
+	--for _,v in pairs(workspace:GetDescendants()) do if v:IsA("Humanoid") and v:FindFirstChild("Voided") then restoreCharacter(v) end end
+	banished = true
+	--cce.Brightness = -5
+	runServ.RenderStepped:Wait()
+	cceTween:Pause() dofTween:Pause()
+	cceTween, dofTween = tweenServ:Create(cce, TweenInfo.new(0.5), cceGoal), tweenServ:Create(dof, TweenInfo.new(0.5), dofGoal)
+	tweenServ:Create(banishSound, TweenInfo.new(0.5), {Volume = 0.5}):Play()
+	cceTween:Play() dofTween:Play()
+	banishSound:Play()
+	tweenServ:Create(banishSound, TweenInfo.new(1), {PlaybackSpeed = 1}):Play()
+end
+local function vfxDisabled()
+	cce.Brightness, cce.Contrast, cce.Saturation, cce.TintColor = 0, 5, -1, Color3.fromRGB(75, 0, 0)
+	banished = false
+	restoreObjects()
+	runServ.RenderStepped:Wait()
+	cceTween:Pause() dofTween:Pause()
+	cceTween, dofTween = tweenServ:Create(cce, TweenInfo.new(0.5), cceEnd), tweenServ:Create(dof, TweenInfo.new(0.5), dofEnd)
+	tweenServ:Create(banishSound, TweenInfo.new(0.5), {PlaybackSpeed = 0}):Play()
+	cceTween:Play() dofTween:Play()
+	task.delay(0.5, function()
+		banishSound:Pause()
+	end)
+end
+workspace.DescendantAdded:Connect(function(object)
+	if banished and not object:IsA("Humanoid") then
+		removeObj(object)
+	elseif banished and object.Name == "Voided" then
+		print(object.Parent.Parent.Name)
+		restoreObjects(object.Parent) 
+	end
+end)
+local activeCheck;
+if script:WaitForChild("active").Value == true then vfxEnabled() else vfxDisabled() end
+activeCheck = script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)
+script.ChildAdded:Connect(function()
+	if script:FindFirstChild("active") and #script:GetChildren() <= 0 then
+		activeCheck:Disconnect()
+		if script.active.Value == true then vfxEnabled() else vfxDisabled() end
+		activeCheck = script.active.Changed:Connect(function() if script.active.Value == true then vfxEnabled() else vfxDisabled() end end)
+	end
+end)]], target)
+							banishVFX.Name = "banishVFX"
+							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
+							activeVal.Parent = banishVFX
+							table.insert(banishedScripts, banishVFX)
+						else
+							local banishVFX = Instance.new("Folder")
+							banishVFX.Name = "banishVFX"
+							if victimPlr then banishVFX.Parent = victimPlr.PlayerGui else banishVFX.Parent = target end
+							local activeVal = Instance.new("BoolValue") activeVal.Name, activeVal.Value, activeVal.Parent = "active", true, banishVFX
+							banishVFX:WaitForChild("active").Value = true
+							table.insert(banishedScripts, banishVFX)
+						end
+						warn("pos-banish")
+						screamFade.Parent = scream
+							tweenServ:Create(screamFade, TweenInfo.new(0.5), {HighGain = -80, MidGain = -80}):Play()
+							tweenServ:Create(screamFade, TweenInfo.new(2), {LowGain = -80}):Play()
+							for _,v in pairs(target:GetDescendants()) do
+								if v:IsA("BasePart") or v:IsA("Decal") then table.insert(victimParts, v) table.insert(victimTransparency, v.Transparency) tweenServ:Create(v, TweenInfo.new(0.25), {Transparency = 1}):Play() end
+							end
+							task.delay(2, function() scream:Stop() scream.Parent = script end)
+					end)
+				end
+			end
+		end
+		if not isNPC then 
+			local abilityselect;
+			abilityselect = owner.Chatted:Connect(function(msg)
+				if string.lower(msg) == "> blackout" then blackout()
+				elseif string.lower(msg) == "> cloak" then cloak()
+				elseif string.lower(msg) == "> decoy" then decoy()
+				elseif string.lower(msg) == "> wildfire" then wildfire()
+				elseif string.lower(msg) == "> infect" then infect()
+				elseif string.lower(msg) == "> space" then space()
+				end
+			end)
+		end
+
 		if script.Ability.Value == "Cloak" then
 			cloak()
 		elseif script.Ability.Value == "Decoy" then
@@ -4951,8 +5613,17 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 			blackout()
 		elseif script.Ability.Value == "Infect" then
 			infect()
+		elseif script.Ability.Value == "Space" then
+			space()
+			--wait(2)
+			--primary(owner, "equip", "", "")
+			--wait(2)
+			--primary(owner, "swing", "", "")
+			--wait(2)
+			----primary(owner, "hit", char.Name, tostring(char:WaitForChild("uniquegrabid").Value))
+			--primary(owner, "hit", "rat", tostring(workspace.rat:WaitForChild("uniquegrabid").Value))
 		end
-
+		ability:Destroy()
 		print("To swap abilities, type > and then the ability name in chat.")
 		print("The current abilities are:")
 		print("> blackout")
@@ -4960,8 +5631,230 @@ for _,v in pairs(owner.PlayerGui:GetChildren()) do if v.Name == "DeathStatus" or
 		print("> decoy")
 		print("> wildfire")
 		print("> infect")
+		print("animbruh")
+
+		local npcMovement, grabCD;
+		npcMovement = coroutine.wrap(function()
+			grabCD = false
+			defaultPos(0.35)
+			wait(1)
+			local closestHum, closestHumDist = nil, math.huge
+			print("start")
+			while hum and hum.Parent and hum.Health > 0 do
+				--print("loop")
+				if not closestHum or closestHum.Parent or closestHum.Health < 0 then
+					closestHumDist = math.huge
+					for _,v in pairs(workspace:GetDescendants()) do
+						if v ~= hum and v:IsA("Humanoid") and v.Health > 0 and not v.Parent:FindFirstChild("Vampire") and v.Parent:FindFirstChildWhichIsA("BasePart") and (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < closestHumDist then
+							closestHum, closestHumDist = v, (v.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude
+						end
+					end
+				end
+				if closestHum and closestHum.Parent and closestHum.Health > 0 then
+					hum:MoveTo(closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position + (hrp.Position - closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position).Unit*2)
+					if not grabCD and (closestHum.Parent:FindFirstChildWhichIsA("BasePart").Position - hrp.Position).Magnitude < 4 then
+						grabCD = true
+						swing()
+						if closestHum.Health - 10 <= 0 then closestHum.BreakJointsOnDeath = false end
+						closestHum:TakeDamage(10)
+						if closestHum.Health <= 0 then ragdoll(closestHum.Parent) end
+						wait(0.65)
+						grabCD = false
+					end
+					--print(closestHum.Parent.Name)
+				end
+
+				wait(0.1)
+			end
+		end)
+		if character ~= char then
+			isNPC = true
+			wait(1)
+			npcMovement()
+		end
+
 	end)
 	entirescript()
 end
 
-thescript(owner)
+
+local started, maskpos, createMask = false, CFrame.new(0, 5, 0), nil
+local lastEquipped = os.time()
+function createMask()
+	tool = Instance.new("Tool")
+	tool.Name = "Vampire Mask"
+	tool.Grip = CFrame.new(0, 0, 0, 1, 4.4189494730062506e-08, 1.4901161193847656e-08, -4.4189494730062506e-08, 1, -1.8679655600095657e-09, -1.4901161193847656e-08, 1.867964893875751e-09, 1)
+	tool.GripForward = Vector3.new(-1.4901161193847656e-08, 1.8679655600095657e-09, -1)
+	tool.GripUp = Vector3.new(4.4189494730062506e-08, 1, 1.867964893875751e-09)
+	tool.GripRight = Vector3.new(1, -4.4189494730062506e-08, -1.4901161193847656e-08)
+
+	handle = Instance.new("Part")
+	handle.Name = "Handle"
+	handle.Size = Vector3.new(1, 1, 1)
+	handle.Parent = tool
+	local partbrick = Instance.new("Part")
+	partbrick.Name, partbrick.Size, partbrick.Parent = "respawn", Vector3.new(1, 1, 1), tool
+	partbrick.Anchored, partbrick.CanCollide, partbrick.Transparency = true, false, 1
+
+	mesh = Instance.new("SpecialMesh")
+	mesh.MeshId = "http://www.roblox.com/asset/?id=13192557"
+	mesh.TextureId = "http://www.roblox.com/asset/?id=131268428"
+	mesh.MeshType = Enum.MeshType.FileMesh
+	mesh.Parent = handle
+	mesh.VertexColor = Vector3.new(0, 0, 0)
+
+	local particles = Instance.new("ParticleEmitter")
+	particles.Name = "particles"
+	particles.LightInfluence = 1
+	particles.Lifetime = NumberRange.new(1, 1)
+	particles.SpreadAngle = Vector2.new(35, 35)
+	particles.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(0.6978527, 0), NumberSequenceKeypoint.new(1, 1)})
+	particles.Color = ColorSequence.new(Color3.fromRGB(116, 2, 255), Color3.fromRGB(122, 0, 2))
+	particles.VelocitySpread = 35
+	particles.Speed = NumberRange.new(10, 10)
+	particles.Size = NumberSequence.new(0.25)
+	particles.RotSpeed = NumberRange.new(110, 110)
+	particles.Rate = 0
+	particles.EmissionDirection = Enum.NormalId.Front
+	particles.Rotation = NumberRange.new(180, 180)
+	particles.Parent = handle
+	local particles2 = particles:Clone()
+	particles2.Lifetime = NumberRange.new(0.25)
+	particles2.Name = "particles"
+	particles2.Lifetime = NumberRange.new(0.4)
+	particles2.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})
+	particles2.Color = ColorSequence.new(Color3.fromRGB(28, 0, 62))
+	particles2.Speed = NumberRange.new(10, 10)
+	particles2.Size = NumberSequence.new(1)
+	particles2.EmissionDirection = Enum.NormalId.Bottom
+	particles2.Parent = partbrick
+
+	local use = Instance.new("Sound")
+	use.Name = "use"
+	use.SoundId = "rbxassetid://444667824"
+	use.Parent = handle
+
+	local ChorusSoundEffect = Instance.new("ChorusSoundEffect")
+	ChorusSoundEffect.Mix = 0.6
+	ChorusSoundEffect.Depth = 0.13
+	ChorusSoundEffect.Rate = 6.1999998
+	ChorusSoundEffect.Parent = use
+
+	local whispers = Instance.new("Sound")
+	whispers.Name = "Whispers"
+	whispers.EmitterSize = 5
+	whispers.RollOffMaxDistance = 10
+	whispers.Volume = 0.05
+	whispers.Looped = true
+	whispers.MinDistance = 5
+	whispers.MaxDistance = 10
+	whispers.SoundId = "rbxassetid://8597099689"
+	whispers.RollOffMinDistance = 5
+	whispers.Parent = handle
+
+	local sound = use
+	whispers:Play()
+	local pickupable = true
+	if script:FindFirstChild("Holder") then
+		script.Parent = script.Holder.Value
+	else
+		script.Parent = workspace
+	end
+
+	if owner and not started then
+		started = true
+		tool.Parent = owner.Backpack
+	else 
+		tool.Parent = script
+		handle.CFrame = maskpos
+		handle.Transparency = 1
+		partbrick.CFrame = CFrame.new(handle.Position + Vector3.new(0, 1, 0))
+		particles2:Emit(75)
+		tweenServ:Create(handle, TweenInfo.new(0.25), {Transparency = 0}):Play()
+	end
+	tweenServ:Create(mesh, TweenInfo.new(0.25), {VertexColor = Vector3.new(1, 1, 1)}):Play()
+	task.delay(2, function() partbrick.CFrame = CFrame.new(1000, 5900, -275) end)
+	--debris:AddItem(partbrick, 2)
+
+	tool.Activated:Connect(function()
+		pcall(function()
+			if tool.Parent:FindFirstChild("Vampire") or (not tool.Parent:FindFirstChild("UpperTorso") and not players:GetPlayerFromCharacter(tool.Parent)) then warn(tool.Parent.Name) return end
+			pickupable = false
+			local holder = tool.Parent
+			sound:Play() particles:Emit(75)
+			whispers.Volume = 0
+			tool.Parent = script
+			handle.CFrame = handle.CFrame * CFrame.new(handle.CFrame.LookVector*0.65)
+			wait()
+			handle.CanCollide = true
+			handle.AssemblyLinearVelocity = handle.CFrame.LookVector*25
+			wait(0.5)
+			if players:GetPlayerFromCharacter(holder) then
+				thescript(players:GetPlayerFromCharacter(holder))
+			else
+				thescript(holder)
+			end
+			wait(2)
+			tweenServ:Create(whispers, TweenInfo.new(5), {Volume = 0.05}):Play()
+			pickupable = true
+			handle.Name = "Handle"
+		end)
+	end)
+	tool.AncestryChanged:Connect(function()
+		runServ.Heartbeat:Wait()
+		if not tool:IsDescendantOf(game) then
+			createMask()
+		elseif tool.Parent == workspace then
+			tool.Parent = script
+		elseif tool.Parent and tool.Parent:FindFirstChild("Humanoid") then
+			lastEquipped = os.time()
+		end
+	end)
+	handle.AncestryChanged:Connect(function()
+		if not handle:IsDescendantOf(tool) then tool:Destroy() end
+	end)
+	while tool.Parent do
+		if not tool.Parent or not tool.Parent:IsDescendantOf(game) then wait(math.random(0, 500)/100) createMask() break end
+		if tool.Parent == script and handle.Velocity.Magnitude <= 1 then
+			maskpos = handle.CFrame
+			wait(2)
+		end
+		if os.time() - lastEquipped > 60 then
+			lastEquipped = os.time()
+			tool.Parent = script
+			mesh.VertexColor = Vector3.new(0, 0, 0)
+			local randomHums, randomHum = {}, nil
+			for _,v in pairs(workspace:GetDescendants()) do if v:IsA("Humanoid") and v.Parent and v.Parent:FindFirstChildWhichIsA("BasePart") then table.insert(randomHums, v) end end
+			randomHum = randomHums[math.random(1, #randomHums)]
+			maskpos = handle.CFrame
+			handle.CFrame = CFrame.new(randomHum.Parent:FindFirstChildWhichIsA("BasePart").Position + Vector3.new(math.random(-1, 1), 0, math.random(-1, 1)).Unit * 20)
+			handle.Transparency = 1
+			mesh.VertexColor = Vector3.new(0, 0, 0)
+			partbrick.CFrame = CFrame.new(handle.Position + Vector3.new(0, 1, 0))
+			particles2:Emit(75)
+			tweenServ:Create(handle, TweenInfo.new(0.25), {Transparency = 0}):Play()
+			tweenServ:Create(mesh, TweenInfo.new(0.25), {VertexColor = Vector3.new(1, 1, 1)}):Play()
+			task.delay(2, function()
+				partbrick.CFrame = CFrame.new(1000, 5900, -275)
+				if not players:GetPlayerFromCharacter(randomHum.Parent) and not randomHum.Parent:FindFirstChild("Vampire") and randomHum.Parent:FindFirstChild("UpperTorso") then 
+					randomHum:MoveTo(handle.Position)
+					handle.Touched:Wait()
+					randomHum:EquipTool(tool)
+					wait(0.5)
+					tool:Activate()
+				end
+			end)
+		end
+		if not tool.Parent or not tool.Parent:IsDescendantOf(game) then wait(math.random(0, 500)/100) createMask() break end
+		wait(0.1)
+	end
+end
+
+local exists = false
+for _,v in pairs(phys:GetCollisionGroups()) do if v.name == "RiftPlane" then exists = true end end
+if not exists then phys:CreateCollisionGroup("RiftPlane") end
+phys:CollisionGroupSetCollidable("Default", "RiftPlane", false)
+
+createMask()
+wait(0.1)
+print(tool.Name)
