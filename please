@@ -1793,8 +1793,8 @@ local function crouch()
 	end
 end
 
-Hum.StateChanged:Connect(function(old, new)
-	if new == Enum.HumanoidStateType.Landed and old == Enum.HumanoidStateType.Freefall then
+Hum.StateChanged:Connect(function(old)
+	if Hum:GetState() == Enum.HumanoidStateType.Landed and old == Enum.HumanoidStateType.Freefall then
 		local value = 55 - (math.pow(math.abs(Core.Velocity.Y) - 55, 1.25))
 		--print("falling -".. Core.Velocity.Y.. "- (".. value.." damage)")
 		if value < 0 then
@@ -3367,7 +3367,7 @@ animate = coroutine.wrap(function()
 
 
 end)
-animate()]], script)
+animate()], script)
 		end
 		primaryScript.Disabled = true
 		local abilityInd = script.Ability:Clone()
