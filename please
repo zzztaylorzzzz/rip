@@ -1734,6 +1734,7 @@ for i = 1, 27 do
 		--local part = Instance.new("SpawnLocation")
 		--part.Anchored, part.CanCollide, part.Position, part.Size, part.Name = true, true, cellpos, Vector3.new(15, 1, 15), "Ground"
 		--part.Parent = ground
+		-print("bruh")
 	end
 	cellpos = (cellpos*Vector3.new(0, 1, 1))+Vector3.new(-165, 0, -15)
 	--local part = Instance.new("SpawnLocation")
