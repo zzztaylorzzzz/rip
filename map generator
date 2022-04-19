@@ -1721,7 +1721,7 @@ local main = mapObjs:WaitForChild("Main Tiles"):GetChildren()
 
 local cells, empty = {}, {}
 local placedTiles = {}
-local cellpos = Vector3.new(-165, 0, 165)
+local cellpos = Vector3.new(1000, 0, 1000)
 local spawnTile = nil
 local killme = 0
 
